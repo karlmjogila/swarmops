@@ -2,7 +2,9 @@
 
 **Orchestrate parallel AI agent workers to build software projects.**
 
-![SwarmOps](docs/swarm.png)
+<p align="center">
+  <img src="docs/swarm.png" alt="SwarmOps" width="400">
+</p>
 
 SwarmOps manages swarms of AI agents that work together to complete software projects. It handles the full lifecycle from requirements gathering through code review — spawning workers in parallel, managing git isolation, and coordinating multi-stage review chains.
 
@@ -39,16 +41,13 @@ SwarmOps consists of:
 ## Quick Start
 
 ```bash
-# Install dependencies
-cd dashboard
-pnpm install
+# Clone and install
+git clone https://github.com/siimvene/SwarmOps.git
+cd SwarmOps
+./install.sh
 
-# Configure
-cp .env.example .env
-# Edit .env with your settings
-
-# Run development server
-pnpm dev
+# Start the dashboard
+cd dashboard && pnpm dev
 ```
 
 The dashboard runs on `http://localhost:3939` by default.
@@ -56,7 +55,6 @@ The dashboard runs on `http://localhost:3939` by default.
 ### Requirements
 
 - Node.js 20+
-- pnpm
 - [OpenClaw Gateway](https://github.com/openclaw/openclaw) running locally
 
 ## Project Structure
