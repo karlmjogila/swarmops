@@ -1,318 +1,125 @@
 # SwarmOps
 
-**Multi-agent orchestration platform for AI-powered software development.**
+**Orchestrate parallel AI agent workers to build software projects.**
 
-SwarmOps coordinates multiple AI agents to work on software projects in parallel — decomposing tasks, spawning workers, merging results, and handling code reviews automatically.
+![SwarmOps](docs/swarm.png)
 
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
+SwarmOps manages swarms of AI agents that work together to complete software projects. It handles the full lifecycle from requirements gathering through code review — spawning workers in parallel, managing git isolation, and coordinating multi-stage review chains.
 
-## Features
+## How It Works
 
-### 🤖 Parallel Agent Orchestration
-- Spawn multiple AI workers simultaneously
-- Automatic task decomposition and assignment
-- Smart merge conflict resolution with task-aware context
-- Git worktree isolation for parallel development
+```
+Interview → Specification → Build → Review → Complete
+```
 
-### 📊 Real-time Dashboard
-- Project monitoring with live status updates
-- Visual pipeline editor with drag-and-drop
-- Worker tracking and log viewing
-- Activity timeline and ledger
+1. **Interview** — Chat with an AI to gather project requirements
+2. **Specification** — Architect agent designs the solution and decomposes into tasks
+3. **Build** — Multiple builder agents work in parallel, each in isolated git worktrees
+4. **Review** — Sequential review chain (code → security → design) with automatic fixes
+5. **Complete** — Merge to main when all reviews pass
 
-### 🔄 Intelligent Workflows
-- Customizable pipelines (interview → spec → build → review → fix)
-- Role-based agents with tailored prompts
-- Automatic phase advancement
-- Review-fix loops with escalation
+## Key Features
 
-### 🛡️ Resilience
-- Circuit breaker for spawn protection
-- Retry handling with exponential backoff
-- Progress watchdog for stuck workers
-- Graceful error escalation
+- **Parallel Execution** — Spawn multiple workers simultaneously with dependency-aware scheduling
+- **Git Isolation** — Each worker operates in its own worktree, merged after completion
+- **Role-Based Agents** — Configurable roles with custom models, thinking levels, and prompts
+- **Review Chain** — Multi-stage code review with automatic fix-and-retry loops
+- **Smart Conflict Resolution** — AI-powered merge conflict resolution
+- **Spawn Safeguards** — Circuit breaker, rate limiting, and task deduplication to prevent runaway sessions
+- **Real-time Dashboard** — Monitor workers, view logs, manage projects
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      SwarmOps Dashboard                      │
-│                      (Nuxt 4 + Vue 3)                        │
-├─────────────────────────────────────────────────────────────┤
-│  Projects │ Pipelines │ Roles │ Workers │ Ledger │ Docs    │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Orchestrator Engine                       │
-├─────────────────────────────────────────────────────────────┤
-│  Phase Collector │ Task Queue │ Worker Tracker │ Merger    │
-│  Review Handler  │ Retry Logic │ Spawn Guard   │ Ledger    │
-└─────────────────────────┬───────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│                      OpenClaw Gateway                        │
-│              (sessions_spawn / sessions_send)                │
-└─────────────────────────────────────────────────────────────┘
-```
+SwarmOps consists of:
 
-## Prerequisites
-
-- **Node.js** 20+ (22 recommended)
-- **pnpm** (preferred) or npm
-- **OpenClaw** with `sessions_spawn` capability
-- **Git** for worktree management
+- **Dashboard** — Nuxt 4 web UI for project management and monitoring
+- **Orchestrator** — Core logic for task scheduling, worker management, and phase transitions
+- **Gateway Integration** — Connects to [OpenClaw](https://github.com/openclaw/openclaw) for AI agent spawning
 
 ## Quick Start
 
-### 1. Clone and Install
-
 ```bash
-git clone https://github.com/siimvene/SwarmOps.git
-cd SwarmOps
-
-# Install dashboard dependencies
+# Install dependencies
 cd dashboard
 pnpm install
 
-# Install orchestrator package (optional, for programmatic use)
-cd ../packages/orchestrator
-pnpm install
-```
-
-### 2. Configure Environment
-
-```bash
-cd dashboard
+# Configure
 cp .env.example .env
-```
+# Edit .env with your settings
 
-Edit `.env`:
-```env
-# Path to your projects directory
-PROJECTS_DIR=/path/to/your/projects
-
-# Data directory for orchestrator state
-ORCHESTRATOR_DATA_DIR=/path/to/swarmops/data/orchestrator
-
-# OpenClaw gateway URL
-OPENCLAW_GATEWAY_URL=http://localhost:3284
-
-# Server binding
-HOST=0.0.0.0
-PORT=3939
-```
-
-### 3. Initialize Data
-
-```bash
-cd ../data/orchestrator
-cp roles.example.json roles.json
-cp pipelines.example.json pipelines.json
-```
-
-### 4. Start the Dashboard
-
-```bash
-cd ../../dashboard
+# Run development server
 pnpm dev
 ```
 
-Visit `http://localhost:3939` (or your Tailscale IP for remote access).
+The dashboard runs on `http://localhost:3939` by default.
+
+### Requirements
+
+- Node.js 20+
+- pnpm
+- [OpenClaw Gateway](https://github.com/openclaw/openclaw) running locally
 
 ## Project Structure
 
 ```
 SwarmOps/
-├── dashboard/                  # Nuxt 4 web dashboard
-│   ├── app/                   # Vue components, pages, composables
-│   │   ├── components/        # UI components
-│   │   │   ├── pipeline/      # Visual pipeline editor
-│   │   │   └── ui/           # Base UI components
-│   │   ├── composables/       # Vue composables
-│   │   ├── pages/            # Route pages
-│   │   └── types/            # TypeScript types
-│   ├── server/               # Nitro server
-│   │   ├── api/              # API endpoints
-│   │   └── utils/            # Server utilities
-│   │       ├── phase-collector.ts      # Task collection
-│   │       ├── phase-merger.ts         # Result merging
-│   │       ├── worker-tracker.ts       # Worker monitoring
-│   │       ├── spawn-guard.ts          # Rate limiting
-│   │       └── smart-conflict-resolver.ts
-│   └── tests/                # Test suites
+├── dashboard/          # Nuxt 4 web application
+│   ├── app/           # Vue components, pages, composables
+│   ├── server/        # Nitro API routes and utilities
+│   └── public/docs/   # Built-in documentation
 ├── packages/
-│   └── orchestrator/         # Core orchestrator library
-│       ├── src/
-│       │   ├── api/          # REST API routes
-│       │   ├── services/     # Business logic
-│       │   ├── storage/      # Data persistence
-│       │   └── types/        # TypeScript types
-│       └── tests/
-└── data/                     # Runtime data (gitignored)
-    └── orchestrator/
-        ├── roles.json        # Agent role definitions
-        ├── pipelines.json    # Pipeline graphs
-        └── ledger.jsonl      # Event log
+│   └── orchestrator/  # Core orchestration logic (TypeScript)
+└── data/
+    └── orchestrator/  # Runtime data (roles, pipelines, state)
 ```
-
-## How It Works
-
-### 1. Project Creation
-Create a project with requirements. SwarmOps initializes a `state.json` and `progress.md`.
-
-### 2. Task Decomposition
-The task-decomposer agent breaks requirements into parallelizable tasks with dependencies.
-
-### 3. Parallel Execution
-Workers spawn in isolated git worktrees, each implementing their assigned task.
-
-### 4. Smart Merging
-When workers complete, SwarmOps:
-- Collects all changes
-- Detects conflicts
-- Uses task-aware AI to resolve conflicts intelligently
-- Merges to main branch
-
-### 5. Review Loop
-A reviewer agent checks the merged code. Issues get assigned back to fix agents. This loops until quality gates pass.
-
-## API Reference
-
-### Projects
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/projects` | List all projects |
-| POST | `/api/projects` | Create new project |
-| GET | `/api/projects/:name` | Get project details |
-| POST | `/api/projects/:name/control` | Control project (pause/resume/kill) |
-| POST | `/api/projects/:name/orchestrate` | Start orchestration |
-
-### Pipelines
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/orchestrator/pipelines` | List pipelines |
-| POST | `/api/orchestrator/pipelines` | Create pipeline |
-| PUT | `/api/orchestrator/pipelines/:id` | Update pipeline |
-| DELETE | `/api/orchestrator/pipelines/:id` | Delete pipeline |
-| POST | `/api/orchestrator/pipelines/:id/run` | Execute pipeline |
-
-### Roles
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/orchestrator/roles` | List roles |
-| POST | `/api/orchestrator/roles` | Create role |
-| PUT | `/api/orchestrator/roles/:id` | Update role |
-| DELETE | `/api/orchestrator/roles/:id` | Delete role |
-
-### Workers
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/orchestrator/workers` | List active workers |
-| GET | `/api/orchestrator/workers/:id/logs` | Get worker logs |
-| GET | `/api/orchestrator/worker-tracker` | Get tracker state |
-
-### WebSocket
-Connect to `/_ws` for real-time updates on project status, worker progress, and phase transitions.
 
 ## Configuration
 
 ### Roles
-Define agent personas in `data/orchestrator/roles.json`:
+
+Define agent roles in `data/orchestrator/roles.json`:
 
 ```json
 {
-  "id": "builder",
-  "name": "Builder",
-  "model": "claude-sonnet-4",
-  "thinking": "low",
-  "prompt": "You are a skilled developer..."
+  "builder": {
+    "id": "builder",
+    "name": "Builder",
+    "model": "anthropic/claude-sonnet-4",
+    "thinking": "low",
+    "instructions": "You are a software developer..."
+  }
 }
 ```
 
-**Models**: `claude-opus-4`, `claude-sonnet-4`, `claude-haiku-3`
-**Thinking**: `off`, `low`, `medium`, `high`
+### Environment Variables
 
-### Pipelines
-Create execution graphs with the visual editor or JSON:
+| Variable | Description |
+|----------|-------------|
+| `OPENCLAW_GATEWAY_URL` | Gateway API URL (default: `http://127.0.0.1:18789`) |
+| `OPENCLAW_GATEWAY_TOKEN` | Auth token for dashboard access |
+| `PROJECTS_DIR` | Path to projects directory |
+| `ORCHESTRATOR_DATA_DIR` | Path to orchestrator state |
 
-- **Start Node**: Entry point
-- **Role Nodes**: Agent execution steps
-- **End Node**: Completion marker
-- **Edges**: Define flow and parallelism
+## Pipeline Flow
 
-## Development
+Projects move through phases automatically:
 
-### Running Tests
+1. **Interview** → Spec when `interview.json` has `complete: true`
+2. **Spec** → Build when `specs/IMPLEMENTATION_PLAN.md` exists
+3. **Build** → Review when all tasks in `progress.md` are done
+4. **Review** → Complete when all reviewers approve
 
-```bash
-# Dashboard tests
-cd dashboard
-pnpm test
+The phase watcher polls every 30 seconds and advances projects when conditions are met.
 
-# Orchestrator tests
-cd packages/orchestrator
-pnpm test
-```
+## Documentation
 
-### Building for Production
+Built-in docs are available at `/docs` in the dashboard, covering:
 
-```bash
-cd dashboard
-pnpm build
-node .output/server/index.mjs
-```
-
-## Integration with OpenClaw
-
-SwarmOps uses OpenClaw's native session management:
-
-```typescript
-// Spawn a worker
-sessions_spawn({
-  task: "Implement feature X",
-  agentId: "swarmops-builder",
-  label: "worker-feature-x",
-  model: "claude-sonnet-4",
-  thinking: "low"
-});
-
-// Check worker status
-sessions_list({ kinds: ["isolated"] });
-
-// Get worker output
-sessions_history({ sessionKey: "..." });
-```
-
-## Troubleshooting
-
-### Workers not spawning
-- Check OpenClaw gateway is running (`openclaw status`)
-- Verify `OPENCLAW_GATEWAY_URL` in `.env`
-- Check spawn guard status: `GET /api/orchestrator/spawn-guard`
-
-### Merge conflicts
-- Smart resolver logs to `data/orchestrator/ledger.jsonl`
-- Manual resolution available via dashboard
-
-### Memory issues
-- Server needs ~2GB RAM minimum
-- Add swap for npm/pnpm heavy operations
-- Monitor with `htop` during builds
+- Architecture and system design
+- Agent context and prompts
+- Operations and monitoring
+- Resilience and error handling
 
 ## License
 
 MIT
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run tests
-5. Submit a pull request
-
----
-
-Built with [OpenClaw](https://github.com/openclaw/openclaw) 🦞
