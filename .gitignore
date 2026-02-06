@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+.output/
+.nuxt/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Lock files (use pnpm-lock.yaml or package-lock.json, not both)
+# Uncomment your preferred one:
+# pnpm-lock.yaml
+# package-lock.json
+
+# Runtime data (not tracked in repo)
+data/orchestrator/roles.json
+data/orchestrator/pipelines.json
+data/orchestrator/ledger.jsonl
+data/orchestrator/task-registry.json
+data/orchestrator/retry-state.json
+data/orchestrator/escalations.json
+data/orchestrator/phases/
+data/orchestrator/project-runs/
+data/orchestrator/runs/
+data/orchestrator/sessions/
+data/orchestrator/work/

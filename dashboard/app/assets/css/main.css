@@ -1,0 +1,1217 @@
+/* SwarmOps Dashboard - Light Theme */
+
+:root {
+  /* Light backgrounds */
+  --swarm-bg-primary: #ffffff;
+  --swarm-bg-secondary: #ffffff;
+  --swarm-bg-card: #ffffff;
+  --swarm-bg-hover: #f5f5f5;
+  --swarm-bg-page: #fafafa;
+  
+  /* Borders */
+  --swarm-border: #e0e0e0;
+  --swarm-border-light: #f0f0f0;
+  
+  /* Text */
+  --swarm-text-primary: #1a1a1a;
+  --swarm-text-secondary: #4a4a4a;
+  --swarm-text-muted: #8a8a8a;
+  
+  /* Accent - Green */
+  --swarm-accent: #10b981;
+  --swarm-accent-light: #34d399;
+  --swarm-accent-bg: rgba(16, 185, 129, 0.1);
+  
+  /* Status colors */
+  --swarm-success: #10b981;
+  --swarm-warning: #f59e0b;
+  --swarm-error: #ef4444;
+  --swarm-info: #3b82f6;
+  
+  /* Extended variables for component compatibility */
+  --swarm-bg-tertiary: #f5f5f5;
+  --swarm-bg-card-hover: #f9f9f9;
+  --swarm-accent-dark: #059669;
+  --swarm-accent-glow: rgba(16, 185, 129, 0.3);
+  --swarm-gradient-primary: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --swarm-gradient-card: linear-gradient(180deg, rgba(16, 185, 129, 0.03) 0%, transparent 100%);
+
+  /* Semantic background variants */
+  --swarm-success-bg: rgba(16, 185, 129, 0.1);
+  --swarm-warning-bg: rgba(245, 158, 11, 0.1);
+  --swarm-error-bg: rgba(239, 68, 68, 0.1);
+  --swarm-info-bg: rgba(59, 130, 246, 0.1);
+  --swarm-neutral: #64748b;
+  --swarm-neutral-bg: rgba(100, 116, 139, 0.1);
+  
+  /* Aliases for component compatibility */
+  --swarm-bg-elevated: var(--swarm-bg-hover);
+  --swarm-text-bright: var(--swarm-text-primary);
+  --swarm-gradient-surface: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+  --swarm-success-glow: rgba(16, 185, 129, 0.3);
+  --swarm-warning-glow: rgba(245, 158, 11, 0.3);
+  --swarm-error-glow: rgba(239, 68, 68, 0.3);
+  
+  }
+
+/* Global button reset - prevent browser default borders */
+button {
+  border: none;
+  background: none;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Base */
+html, body, #__nuxt {
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: var(--swarm-bg-page) !important;
+  color: var(--swarm-text-primary) !important;
+  height: 100vh;
+  overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  font-size: 14px;
+  /* Prevent any top whitespace from external elements */
+  position: relative;
+  top: 0;
+}
+
+/* Ensure no pseudo-elements or fixed elements push content down */
+html::before, html::after,
+body::before, body::after,
+#__nuxt::before, #__nuxt::after {
+  display: none !important;
+}
+
+/* Nuxt UI toaster - ensure it doesn't affect layout */
+.Toaster, [data-sonner-toaster] {
+  position: fixed !important;
+  top: auto !important;
+  bottom: 20px !important;
+  right: 20px !important;
+  z-index: 9999 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--swarm-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--swarm-text-muted);
+}
+
+/* ===== NUXT UI OVERRIDES ===== */
+
+/* Buttons - Nuxt UI overrides */
+button,
+[data-part="button"],
+.u-button {
+  font-family: inherit !important;
+  border-radius: 8px !important;
+  transition: all 0.15s ease !important;
+}
+
+
+
+
+
+/* ===== SELECT / DROPDOWN STYLING ===== */
+/* Match button aesthetic with premium styling */
+
+/* Native select elements */
+select,
+[data-part="select"],
+.u-select select {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 10px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 40px !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+}
+
+select:hover,
+[data-part="select"]:hover {
+  border-color: var(--swarm-text-muted) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+select:focus,
+[data-part="select"]:focus {
+  border-color: var(--swarm-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Nuxt UI Select - Trigger Button */
+[data-part="trigger"],
+.select-trigger,
+button[role="combobox"],
+[aria-haspopup="listbox"] {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 10px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  padding: 10px 14px !important;
+  min-height: 40px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+[data-part="trigger"]:hover,
+.select-trigger:hover,
+button[role="combobox"]:hover,
+[aria-haspopup="listbox"]:hover {
+  border-color: var(--swarm-text-muted) !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+  transform: translateY(-1px) !important;
+}
+
+[data-part="trigger"]:focus,
+[data-part="trigger"]:focus-visible,
+.select-trigger:focus,
+button[role="combobox"]:focus,
+[aria-haspopup="listbox"]:focus {
+  border-color: var(--swarm-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 4px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+[data-part="trigger"][data-state="open"],
+button[role="combobox"][aria-expanded="true"],
+[aria-haspopup="listbox"][aria-expanded="true"] {
+  border-color: var(--swarm-accent) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15), 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Select trigger text */
+[data-part="trigger"] span,
+[data-part="value-text"],
+button[role="combobox"] span:not([class*="icon"]) {
+  color: var(--swarm-text-primary) !important;
+  font-weight: 500 !important;
+}
+
+/* Placeholder text styling */
+[data-part="trigger"][data-placeholder] span,
+[data-part="value-text"]:empty::before,
+button[role="combobox"] [data-placeholder] {
+  color: var(--swarm-text-muted) !important;
+  font-weight: 400 !important;
+}
+
+/* Chevron/Arrow icon in select */
+[data-part="trigger"] [data-part="indicator"],
+[data-part="trigger"] svg,
+button[role="combobox"] svg {
+  color: var(--swarm-text-muted) !important;
+  width: 16px !important;
+  height: 16px !important;
+  transition: transform 0.2s ease !important;
+  flex-shrink: 0 !important;
+}
+
+[data-part="trigger"][data-state="open"] [data-part="indicator"],
+[data-part="trigger"][data-state="open"] svg:last-child,
+button[role="combobox"][aria-expanded="true"] svg:last-child {
+  transform: rotate(180deg) !important;
+}
+
+/* Variant: outline (matches ghost button style) */
+.u-select[variant="outline"] [data-part="trigger"],
+[data-variant="outline"][data-part="trigger"] {
+  background: transparent !important;
+  border: 1px solid var(--swarm-border) !important;
+}
+
+.u-select[variant="outline"] [data-part="trigger"]:hover,
+[data-variant="outline"][data-part="trigger"]:hover {
+  background: var(--swarm-bg-hover) !important;
+  border-color: var(--swarm-border) !important;
+}
+
+/* Size variants - sm */
+[data-size="sm"][data-part="trigger"],
+.u-select[size="sm"] [data-part="trigger"],
+button[role="combobox"][data-size="sm"] {
+  padding: 6px 10px !important;
+  min-height: 32px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+/* Size variants - xs */
+[data-size="xs"][data-part="trigger"],
+.u-select[size="xs"] [data-part="trigger"],
+button[role="combobox"][data-size="xs"] {
+  padding: 4px 8px !important;
+  min-height: 28px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+}
+
+/* Standardized select styling matching button aesthetic */
+
+/* Select variant classes */
+
+/* Ralph select - primary (matches primary button) */
+
+/* Ralph select - secondary (outline style) */
+
+
+/* Ralph select - small size */
+/* Ralph select - extra small size */
+
+/* ===== UInput - Consistent Input Styling ===== */
+
+/* UInput wrapper container */
+[data-part="root"].relative,
+.u-input {
+  width: 100%;
+}
+
+/* Base input styling for UInput */
+[data-part="root"] input,
+.u-input input,
+input[type="text"],
+input[type="date"],
+input[type="search"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+.u-textarea textarea {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 8px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  width: 100% !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+/* Size variants for UInput */
+[data-part="root"][data-size="xs"] input {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+}
+
+[data-part="root"][data-size="sm"] input {
+  padding: 6px 10px !important;
+  font-size: 12px !important;
+  border-radius: 6px !important;
+}
+
+[data-part="root"][data-size="md"] input {
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+}
+
+[data-part="root"][data-size="lg"] input {
+  padding: 10px 14px !important;
+  font-size: 14px !important;
+}
+
+/* Focus states */
+[data-part="root"] input:focus,
+.u-input input:focus,
+input:focus,
+textarea:focus {
+  border-color: var(--swarm-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Hover state (non-focused) */
+[data-part="root"] input:hover:not(:focus):not(:disabled),
+.u-input input:hover:not(:focus):not(:disabled),
+input:hover:not(:focus):not(:disabled),
+textarea:hover:not(:focus):not(:disabled) {
+  border-color: var(--swarm-text-muted) !important;
+}
+
+/* Placeholder styling */
+[data-part="root"] input::placeholder,
+.u-input input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--swarm-text-muted) !important;
+  opacity: 1 !important;
+}
+
+/* Disabled state */
+[data-part="root"] input:disabled,
+.u-input input:disabled,
+input:disabled,
+textarea:disabled {
+  background: var(--swarm-bg-hover) !important;
+  color: var(--swarm-text-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* Readonly state */
+[data-part="root"] input:read-only,
+.u-input input:read-only,
+input:read-only,
+textarea:read-only {
+  background: var(--swarm-bg-hover) !important;
+  cursor: default !important;
+}
+
+/* UInput with icon - adjust padding */
+[data-part="root"]:has([data-part="leading"]) input,
+.u-input:has(.leading-icon) input {
+  padding-left: 36px !important;
+}
+
+[data-part="root"]:has([data-part="trailing"]) input,
+.u-input:has(.trailing-icon) input {
+  padding-right: 36px !important;
+}
+
+/* Icon styling within UInput */
+[data-part="leading"],
+[data-part="trailing"] {
+  color: var(--swarm-text-muted) !important;
+  pointer-events: none;
+}
+
+/* Error state */
+[data-part="root"][data-invalid] input,
+.u-input.error input,
+input.error,
+input:invalid:not(:placeholder-shown) {
+  border-color: var(--swarm-error) !important;
+}
+
+[data-part="root"][data-invalid] input:focus,
+.u-input.error input:focus {
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Success state */
+[data-part="root"][data-valid] input,
+.u-input.success input {
+  border-color: var(--swarm-success) !important;
+}
+
+/* Loading state */
+[data-part="root"][data-loading] input,
+.u-input.loading input {
+  background-image: linear-gradient(
+    90deg,
+    var(--swarm-bg-card) 0%,
+    var(--swarm-bg-hover) 50%,
+    var(--swarm-bg-card) 100%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: shimmer 1.5s infinite !important;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Textarea specific */
+textarea,
+.u-textarea textarea {
+  min-height: 80px !important;
+  resize: vertical !important;
+}
+
+/* UTextarea component */
+[data-part="root"] textarea {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 8px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  width: 100% !important;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+[data-part="root"] textarea:focus {
+  border-color: var(--swarm-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Checkbox */
+input[type="checkbox"] {
+  accent-color: var(--swarm-accent) !important;
+  width: 16px !important;
+  height: 16px !important;
+  cursor: pointer !important;
+}
+
+/* Date inputs - style the native picker */
+input[type="date"] {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 8px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  min-width: 140px !important;
+  cursor: pointer !important;
+}
+
+input[type="date"]:focus {
+  border-color: var(--swarm-accent) !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Style the calendar icon */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  background: transparent !important;
+  color: var(--swarm-text-muted) !important;
+  cursor: pointer !important;
+  opacity: 0.6 !important;
+  padding: 2px !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1 !important;
+}
+
+/* Hide the native date format text when empty */
+input[type="date"]:not(:focus):invalid {
+  color: var(--swarm-text-muted) !important;
+}
+
+/* Cards and panels */
+.u-card,
+[data-part="card"] {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 12px !important;
+}
+
+/* Modals */
+[role="dialog"],
+.u-modal,
+[data-part="dialog"] {
+  background: var(--swarm-bg-card) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ===== DROPDOWN MENUS / LISTBOX STYLING ===== */
+/* Premium dropdown styling to match button aesthetic */
+
+[role="menu"],
+[role="listbox"],
+.u-dropdown-menu,
+[data-part="content"],
+[data-part="positioner"] [data-part="content"] {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  padding: 6px !important;
+  z-index: 9999 !important;
+  overflow: hidden !important;
+  animation: dropdownFadeIn 0.15s ease-out !important;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dropdown item styling */
+[role="menuitem"],
+[role="option"],
+[data-part="item"],
+[data-part="option"] {
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--swarm-text-secondary) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin: 2px 0 !important;
+}
+
+[role="menuitem"]:hover,
+[role="option"]:hover,
+[role="option"][data-highlighted],
+[data-part="item"]:hover,
+[data-part="item"][data-highlighted],
+[data-part="option"]:hover,
+[data-part="option"][data-highlighted] {
+  background: var(--swarm-bg-hover) !important;
+  color: var(--swarm-text-primary) !important;
+}
+
+/* Selected/checked option */
+[role="option"][aria-selected="true"],
+[role="option"][data-selected],
+[data-part="option"][data-selected],
+[data-part="item"][data-checked] {
+  background: var(--swarm-accent-bg) !important;
+  color: var(--swarm-accent) !important;
+}
+
+[role="option"][aria-selected="true"]:hover,
+[role="option"][data-selected]:hover,
+[data-part="option"][data-selected]:hover {
+  background: rgba(16, 185, 129, 0.15) !important;
+}
+
+/* Check icon for selected items */
+[role="option"][aria-selected="true"]::before,
+[data-part="item-indicator"] {
+  color: var(--swarm-accent) !important;
+}
+
+/* Option text */
+[data-part="item-text"],
+[role="option"] span {
+  font-weight: 500 !important;
+}
+
+/* Dropdown group labels */
+[role="group"] > [role="presentation"],
+[data-part="group-label"],
+[data-part="label"] {
+  padding: 8px 14px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: var(--swarm-text-muted) !important;
+  border-bottom: 1px solid var(--swarm-border-light) !important;
+  margin-bottom: 4px !important;
+}
+
+/* Separator in dropdown */
+[role="separator"],
+[data-part="separator"] {
+  height: 1px !important;
+  background: var(--swarm-border-light) !important;
+  margin: 6px 8px !important;
+}
+
+/* Badges */
+.u-badge,
+[data-part="badge"] {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
+}
+
+/* ===== RALPH BUTTON SYSTEM ===== */
+
+/* Base button styles */
+
+
+/* Primary button - matches Run Pipeline style */
+
+/* Secondary button - outlined style */
+
+/* ===== PROJECT STYLES ===== */
+
+/* Sidebar items */
+.swarm-project-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin: 2px 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  transition: background-color 0.15s ease;
+  color: var(--swarm-text-secondary);
+}
+
+.swarm-project-item:hover {
+  background: var(--swarm-bg-hover);
+  color: var(--swarm-text-primary);
+}
+
+.swarm-project-item.active {
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+}
+
+/* Badges */
+.swarm-badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.swarm-badge-running {
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+}
+
+.swarm-badge-running::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--swarm-accent);
+  border-radius: 50%;
+  animation: blink 1s infinite;
+}
+
+.swarm-badge-completed {
+  background: var(--swarm-success-bg);
+  color: var(--swarm-success);
+}
+
+.swarm-badge-paused {
+  background: var(--swarm-warning-bg);
+  color: var(--swarm-warning);
+}
+
+.swarm-badge-error {
+  background: var(--swarm-error-bg);
+  color: var(--swarm-error);
+}
+
+.swarm-badge-pending {
+  background: var(--swarm-bg-hover);
+  color: var(--swarm-text-muted);
+}
+
+/* Stat cards */
+.swarm-stat-card {
+  background: var(--swarm-bg-card);
+  border: 1px solid var(--swarm-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.swarm-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.swarm-stat-icon.green {
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+}
+
+.swarm-stat-icon.blue {
+  background: var(--swarm-info-bg);
+  color: var(--swarm-info);
+}
+
+.swarm-stat-icon.yellow {
+  background: var(--swarm-warning-bg);
+  color: var(--swarm-warning);
+}
+
+.swarm-stat-icon.gray {
+  background: var(--swarm-bg-hover);
+  color: var(--swarm-text-muted);
+}
+
+.swarm-stat-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.swarm-stat-label {
+  font-size: 13px;
+  color: var(--swarm-text-secondary);
+  margin-bottom: 2px;
+}
+
+.swarm-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+}
+
+/* Sections */
+.swarm-section {
+  background: var(--swarm-bg-card);
+  border: 1px solid var(--swarm-border);
+  border-radius: 12px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.swarm-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--swarm-border);
+  background: var(--swarm-bg-hover);
+}
+
+.swarm-section-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+}
+
+.swarm-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+}
+
+.swarm-section-body {
+  padding: 16px 20px;
+}
+
+/* Code blocks */
+.swarm-pre {
+  background: var(--swarm-bg-hover);
+  border: 1px solid var(--swarm-border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--swarm-text-secondary);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  margin: 0;
+}
+
+/* Empty state */
+.swarm-empty {
+  text-align: center;
+  padding: 48px 24px;
+}
+
+.swarm-empty-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  color: var(--swarm-text-muted);
+}
+
+.swarm-empty-title {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--swarm-text-primary);
+  margin-bottom: 4px;
+}
+
+.swarm-empty-text {
+  font-size: 13px;
+  color: var(--swarm-text-muted);
+  margin-bottom: 16px;
+}
+
+/* Tables */
+table {
+  width: 100%;
+  background: var(--swarm-bg-card);
+  border-collapse: collapse;
+}
+
+th {
+  background: var(--swarm-bg-hover);
+  color: var(--swarm-text-secondary);
+  font-weight: 500;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--swarm-border);
+}
+
+td {
+  padding: 12px 16px;
+  color: var(--swarm-text-primary);
+  border-bottom: 1px solid var(--swarm-border-light);
+  font-size: 13px;
+}
+
+tr:hover td {
+  background: var(--swarm-bg-hover);
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Selection & Focus */
+::selection {
+  background: rgba(16, 185, 129, 0.2);
+  color: var(--swarm-text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--swarm-accent);
+  outline-offset: 2px;
+}
+
+/* Details/summary */
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details[open] > summary,
+details > summary:hover {
+  background: var(--swarm-bg-hover);
+}
+
+/* ===== VueDatePicker Theme ===== */
+.dp__theme_light {
+  --dp-background-color: var(--swarm-bg-card);
+  --dp-text-color: var(--swarm-text-primary);
+  --dp-hover-color: var(--swarm-bg-hover);
+  --dp-hover-text-color: var(--swarm-text-primary);
+  --dp-hover-icon-color: var(--swarm-text-primary);
+  --dp-primary-color: var(--swarm-accent);
+  --dp-primary-text-color: #fff;
+  --dp-secondary-color: var(--swarm-text-muted);
+  --dp-border-color: var(--swarm-border);
+  --dp-menu-border-color: var(--swarm-border);
+  --dp-border-color-hover: var(--swarm-accent);
+  --dp-disabled-color: var(--swarm-bg-hover);
+  --dp-scroll-bar-background: var(--swarm-bg-hover);
+  --dp-scroll-bar-color: var(--swarm-border);
+  --dp-success-color: var(--swarm-success);
+  --dp-success-color-disabled: var(--swarm-success);
+  --dp-icon-color: var(--swarm-text-muted);
+  --dp-danger-color: var(--swarm-error);
+  --dp-highlight-color: var(--swarm-accent-bg);
+}
+
+.datepicker-input,
+.dp__input {
+  background: var(--swarm-bg-card) !important;
+  border: 1px solid var(--swarm-border) !important;
+  border-radius: 8px !important;
+  color: var(--swarm-text-primary) !important;
+  font-family: inherit !important;
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  min-width: 140px !important;
+  height: 36px !important;
+}
+
+.dp__input:focus {
+  border-color: var(--swarm-accent) !important;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.15) !important;
+}
+
+.dp__input::placeholder {
+  color: var(--swarm-text-muted) !important;
+}
+
+.dp__menu {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dp__calendar_header_item {
+  font-weight: 500 !important;
+  color: var(--swarm-text-muted) !important;
+}
+
+.dp__cell_inner {
+  border-radius: 8px !important;
+}
+
+.dp__action_button {
+  border-radius: 6px !important;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CUSTOM BUTTON SYSTEM - Premium styled buttons
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.swarm-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.swarm-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.swarm-btn-danger {
+  background: var(--swarm-error-bg);
+  color: var(--swarm-error);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+.swarm-btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.35);
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
+}
+
+.swarm-btn-warning {
+  background: var(--swarm-warning-bg);
+  color: var(--swarm-warning);
+  border-color: rgba(245, 158, 11, 0.2);
+}
+.swarm-btn-warning:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.35);
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+}
+
+.swarm-btn-success {
+  background: var(--swarm-success-bg);
+  color: var(--swarm-success);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+.swarm-btn-success:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.18);
+  border-color: rgba(16, 185, 129, 0.35);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+}
+
+.swarm-btn-primary {
+  background: var(--swarm-accent);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+.swarm-btn-primary:hover:not(:disabled) {
+  background: var(--swarm-accent-dark);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+.swarm-btn-ghost {
+  background: transparent;
+  color: var(--swarm-text-secondary);
+  border-color: var(--swarm-border);
+}
+.swarm-btn-ghost:hover:not(:disabled) {
+  background: var(--swarm-bg-hover);
+  color: var(--swarm-text-primary);
+  border-color: var(--swarm-border);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   STRUCTURAL COMPONENT CLASSES - Cards, Sections, Stats
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.swarm-header-card {
+  background: var(--swarm-bg-card);
+  background-image: var(--swarm-gradient-card);
+  border: 1px solid var(--swarm-border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.swarm-stat-card {
+  background: var(--swarm-bg-secondary);
+  border: 1px solid var(--swarm-border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.2s ease;
+}
+.swarm-stat-card:hover {
+  background: var(--swarm-bg-hover);
+  border-color: var(--swarm-border);
+}
+
+.swarm-stat-label {
+  font-size: 12px;
+  color: var(--swarm-text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swarm-stat-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+}
+
+.swarm-section {
+  background: var(--swarm-bg-card);
+  border: 1px solid var(--swarm-border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.swarm-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.swarm-section-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+}
+
+.swarm-section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+  margin: 0;
+}
+
+.swarm-pre {
+  background: var(--swarm-bg-hover);
+  border: 1px solid var(--swarm-border);
+  border-radius: 8px;
+  padding: 16px;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--swarm-text-secondary);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LEGACY ALIASES - ralph-* mapped to swarm-* for backwards compatibility
+   ═══════════════════════════════════════════════════════════════════════════ */
+.ralph-header-card { background: var(--swarm-bg-card); background-image: var(--swarm-gradient-card); border: 1px solid var(--swarm-border); border-radius: 16px; padding: 24px; }
+.ralph-stat-card { background: var(--swarm-bg-secondary); border: 1px solid var(--swarm-border); border-radius: 12px; padding: 16px 20px; transition: all 0.2s ease; }
+.ralph-stat-card:hover { background: var(--swarm-bg-hover); }
+.ralph-stat-label { font-size: 12px; color: var(--swarm-text-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 6px; }
+.ralph-stat-value { font-size: 18px; font-weight: 600; color: var(--swarm-text-primary); }
+.ralph-section { background: var(--swarm-bg-card); border: 1px solid var(--swarm-border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+.ralph-section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.ralph-section-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; background: var(--swarm-accent-bg); color: var(--swarm-accent); }
+.ralph-section-title { font-size: 16px; font-weight: 600; color: var(--swarm-text-primary); margin: 0; }
+.ralph-pre { background: var(--swarm-bg-hover); border: 1px solid var(--swarm-border); border-radius: 8px; padding: 16px; font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 13px; line-height: 1.5; color: var(--swarm-text-secondary); white-space: pre-wrap; overflow-x: auto; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TAILWIND UTILITY REPLACEMENTS - Grid and Flex
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.grid { display: grid; }
+.grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gap-4 { gap: 1rem; }
+.gap-5 { gap: 1.25rem; }
+.mb-8 { margin-bottom: 2rem; }
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-wrap { flex-wrap: wrap; }
+.items-start { align-items: flex-start; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.relative { position: relative; }
+.shrink-0 { flex-shrink: 0; }
+.text-white { color: white; }
+
+@media (min-width: 1024px) {
+  .lg\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}

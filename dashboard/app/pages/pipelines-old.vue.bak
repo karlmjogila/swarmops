@@ -1,0 +1,1054 @@
+<script setup lang="ts">
+import { useAutoSave } from '~/composables/useAutoSave'
+
+// Simple UUID generator (crypto.randomUUID not available over HTTP)
+function generateId(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0
+    const v = c === 'x' ? r : (r & 0x3 | 0x8)
+    return v.toString(16)
+  })
+}
+
+interface PipelineStep {
+  id: string
+  order: number
+  roleId: string
+  roleName?: string
+  action: string
+  convergence?: {
+    maxIterations?: number
+    targetScore?: number
+  }
+}
+
+interface Pipeline {
+  id: string
+  name: string
+  description?: string
+  status: 'idle' | 'running' | 'paused' | 'completed' | 'error'
+  steps: PipelineStep[]
+  createdAt?: string
+  lastRunAt?: string
+  currentStep?: number
+  completedSteps?: number[]
+}
+
+interface Role {
+  id: string
+  name: string
+}
+
+useHead({
+  title: 'Pipelines - SwarmOps'
+})
+
+const { data: pipelines, pending, refresh } = useFetch<Pipeline[]>('/api/orchestrator/pipelines', {
+  default: () => [],
+})
+
+const { data: roles } = useFetch<Role[]>('/api/orchestrator/roles', {
+  default: () => [],
+})
+
+// Modal state
+const showModal = ref(false)
+const editingPipeline = ref<Pipeline | null>(null)
+const showDeleteConfirm = ref(false)
+const pipelineToDelete = ref<Pipeline | null>(null)
+
+// Form state
+const form = ref({
+  name: '',
+  description: '',
+  steps: [] as PipelineStep[],
+})
+
+// Auto-save state
+const autoSaveEnabled = ref(false)
+const autoSaveError = ref<string | null>(null)
+const autoSaveLastSaved = ref<Date | null>(null)
+const autoSaving = ref(false)
+const hasUnsavedChanges = ref(false)
+
+// Auto-save setup
+const { saving: autoSaveSaving, error: autoSaveErr, lastSaved, hasUnsavedChanges: unsaved, cancel: cancelAutoSave } = useAutoSave({
+  source: () => ({ ...form.value }),
+  enabled: autoSaveEnabled,
+  debounceMs: 2000,
+  onSave: async (data) => {
+    if (!editingPipeline.value) return
+    await $fetch(`/api/orchestrator/pipelines/${editingPipeline.value.id}`, {
+      method: 'PUT',
+      body: data,
+    })
+    refresh()
+  },
+  onSaveStart: () => {
+    autoSaving.value = true
+    autoSaveError.value = null
+  },
+  onSaveSuccess: () => {
+    autoSaving.value = false
+    autoSaveLastSaved.value = new Date()
+    hasUnsavedChanges.value = false
+  },
+  onSaveError: (err) => {
+    autoSaving.value = false
+    autoSaveError.value = err instanceof Error ? err.message : 'Auto-save failed'
+  },
+})
+
+// Sync auto-save state
+watch(autoSaveSaving, (v) => { autoSaving.value = v })
+watch(autoSaveErr, (v) => { autoSaveError.value = v })
+watch(lastSaved, (v) => { autoSaveLastSaved.value = v })
+watch(unsaved, (v) => { hasUnsavedChanges.value = v })
+
+function getStatusColor(status: string): string {
+  switch (status) {
+    case 'running': return '#10b981'
+    case 'completed': return '#3b82f6'
+    case 'paused': return '#f59e0b'
+    case 'error': return '#ef4444'
+    default: return 'var(--swarm-text-muted)'
+  }
+}
+
+function getStatusBg(status: string): string {
+  switch (status) {
+    case 'running': return 'rgba(16, 185, 129, 0.1)'
+    case 'completed': return 'rgba(59, 130, 246, 0.1)'
+    case 'paused': return 'rgba(245, 158, 11, 0.1)'
+    case 'error': return 'rgba(239, 68, 68, 0.1)'
+    default: return 'var(--swarm-bg-hover)'
+  }
+}
+
+function openCreateModal() {
+  editingPipeline.value = null
+  form.value = {
+    name: '',
+    description: '',
+    steps: [],
+  }
+  autoSaveEnabled.value = false
+  autoSaveError.value = null
+  autoSaveLastSaved.value = null
+  hasUnsavedChanges.value = false
+  showModal.value = true
+}
+
+function openEditModal(pipeline: Pipeline) {
+  editingPipeline.value = pipeline
+  form.value = {
+    name: pipeline.name,
+    description: pipeline.description || '',
+    steps: [...pipeline.steps],
+  }
+  autoSaveError.value = null
+  autoSaveLastSaved.value = null
+  hasUnsavedChanges.value = false
+  // Enable auto-save after a short delay to avoid saving the initial load
+  nextTick(() => {
+    autoSaveEnabled.value = true
+  })
+  showModal.value = true
+}
+
+function closeModal() {
+  cancelAutoSave()
+  autoSaveEnabled.value = false
+  showModal.value = false
+}
+
+function confirmDelete(pipeline: Pipeline) {
+  pipelineToDelete.value = pipeline
+  showDeleteConfirm.value = true
+}
+
+function addStep() {
+  const newStep: PipelineStep = {
+    id: generateId(),
+    order: form.value.steps.length + 1,
+    roleId: '',
+    action: 'execute',
+  }
+  form.value.steps.push(newStep)
+}
+
+function removeStep(stepId: string) {
+  form.value.steps = form.value.steps
+    .filter(s => s.id !== stepId)
+    .map((s, idx) => ({ ...s, order: idx + 1 }))
+}
+
+function updateStep(updatedStep: PipelineStep) {
+  const index = form.value.steps.findIndex(s => s.id === updatedStep.id)
+  if (index !== -1) {
+    form.value.steps[index] = updatedStep
+  }
+}
+
+function updateSteps(newSteps: PipelineStep[]) {
+  form.value.steps = newSteps
+}
+
+const saving = ref(false)
+const deleting = ref(false)
+const running = ref<string | null>(null)
+
+async function savePipeline() {
+  saving.value = true
+  cancelAutoSave()
+  autoSaveEnabled.value = false
+  try {
+    const method = editingPipeline.value ? 'PUT' : 'POST'
+    const url = editingPipeline.value 
+      ? `/api/orchestrator/pipelines/${editingPipeline.value.id}`
+      : '/api/orchestrator/pipelines'
+    
+    await $fetch(url, {
+      method,
+      body: form.value,
+    })
+    
+    showModal.value = false
+    refresh()
+  } catch (err) {
+    console.error('Failed to save pipeline:', err)
+  } finally {
+    saving.value = false
+  }
+}
+
+function formatAutoSaveTime(date: Date | null): string {
+  if (!date) return ''
+  const now = new Date()
+  const diff = Math.floor((now.getTime() - date.getTime()) / 1000)
+  if (diff < 5) return 'just now'
+  if (diff < 60) return `${diff}s ago`
+  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+}
+
+async function deletePipeline() {
+  if (!pipelineToDelete.value) return
+  
+  deleting.value = true
+  try {
+    await $fetch(`/api/orchestrator/pipelines/${pipelineToDelete.value.id}`, {
+      method: 'DELETE',
+    })
+    showDeleteConfirm.value = false
+    pipelineToDelete.value = null
+    refresh()
+  } catch (err) {
+    console.error('Failed to delete pipeline:', err)
+  } finally {
+    deleting.value = false
+  }
+}
+
+async function runPipeline(pipeline: Pipeline) {
+  running.value = pipeline.id
+  try {
+    await $fetch(`/api/orchestrator/pipelines/${pipeline.id}/run`, {
+      method: 'POST',
+    })
+    refresh()
+  } catch (err) {
+    console.error('Failed to run pipeline:', err)
+  } finally {
+    running.value = null
+  }
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return 'Never'
+  try {
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return dateStr
+  }
+}
+
+// Run history modal
+interface RunSummary {
+  runId: string
+  status: 'running' | 'completed' | 'failed'
+  totalSteps: number
+  completedSteps: number
+  failedSteps: number
+  startedAt: string
+  completedAt?: string
+  duration?: number
+}
+
+const showRunHistory = ref(false)
+const runHistoryPipeline = ref<Pipeline | null>(null)
+const runHistory = ref<RunSummary[]>([])
+const loadingHistory = ref(false)
+
+async function openRunHistory(pipeline: Pipeline) {
+  runHistoryPipeline.value = pipeline
+  showRunHistory.value = true
+  loadingHistory.value = true
+  
+  try {
+    const data = await $fetch<RunSummary[]>(`/api/orchestrator/pipelines/${pipeline.id}/runs`)
+    runHistory.value = data
+  } catch (err) {
+    console.error('Failed to load run history:', err)
+    runHistory.value = []
+  } finally {
+    loadingHistory.value = false
+  }
+}
+
+function formatDuration(ms?: number): string {
+  if (!ms) return '-'
+  const seconds = Math.floor(ms / 1000)
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+  if (minutes < 60) return `${minutes}m ${remainingSeconds}s`
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+  return `${hours}h ${remainingMinutes}m`
+}
+
+function getRunStatusColor(status: string): string {
+  switch (status) {
+    case 'running': return '#3b82f6'
+    case 'completed': return '#10b981'
+    case 'failed': return '#ef4444'
+    default: return 'var(--swarm-text-muted)'
+  }
+}
+
+function getRunStatusBg(status: string): string {
+  switch (status) {
+    case 'running': return 'rgba(59, 130, 246, 0.1)'
+    case 'completed': return 'rgba(16, 185, 129, 0.1)'
+    case 'failed': return 'rgba(239, 68, 68, 0.1)'
+    default: return 'var(--swarm-bg-hover)'
+  }
+}
+</script>
+
+<template>
+  <div class="pipelines-page">
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">Pipelines</h1>
+        <p class="page-subtitle">Design and run multi-step agent workflows</p>
+      </div>
+      <div class="header-actions">
+        <UButton variant="ghost" size="sm" @click="refresh" :loading="pending">
+          <UIcon name="i-heroicons-arrow-path" class="w-4 h-4" />
+        </UButton>
+        <UButton v-if="pipelines?.length" size="sm" @click="openCreateModal">
+          <UIcon name="i-heroicons-plus" class="w-4 h-4" />
+          <span>New Pipeline</span>
+        </UButton>
+      </div>
+    </div>
+
+    <!-- Loading state -->
+    <div v-if="pending && !pipelines?.length" class="loading-state">
+      <UIcon name="i-heroicons-queue-list" class="w-8 h-8 animate-pulse" />
+      <p>Loading pipelines...</p>
+    </div>
+
+    <!-- Empty state -->
+    <div v-else-if="!pipelines?.length" class="empty-state">
+      <UIcon name="i-heroicons-queue-list" class="w-12 h-12" />
+      <h2>No pipelines yet</h2>
+      <p>Create your first pipeline to orchestrate agent workflows</p>
+      <UButton size="sm" @click="openCreateModal" class="mt-4">
+        <UIcon name="i-heroicons-plus" class="w-4 h-4" />
+        Create Pipeline
+      </UButton>
+    </div>
+
+    <!-- Pipelines list -->
+    <div v-else class="pipelines-list">
+      <div 
+        v-for="pipeline in pipelines" 
+        :key="pipeline.id" 
+        class="pipeline-card"
+      >
+        <div class="card-header">
+          <div class="pipeline-info">
+            <h3 class="pipeline-name">{{ pipeline.name }}</h3>
+            <p v-if="pipeline.description" class="pipeline-desc">{{ pipeline.description }}</p>
+          </div>
+          <div 
+            class="status-badge"
+            :style="{ 
+              color: getStatusColor(pipeline.status),
+              background: getStatusBg(pipeline.status)
+            }"
+          >
+            {{ pipeline.status }}
+            <span v-if="pipeline.status === 'running' && pipeline.currentStep" class="step-progress">
+              ({{ pipeline.currentStep }}/{{ pipeline.steps.length }})
+            </span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="steps-preview">
+            <div 
+              v-for="(step, idx) in pipeline.steps.slice(0, 5)" 
+              :key="step.id"
+              class="step-chip"
+              :class="{
+                'step-completed': pipeline.completedSteps?.includes(step.order),
+                'step-running': pipeline.status === 'running' && pipeline.currentStep === step.order,
+                'step-failed': pipeline.status === 'error' && pipeline.currentStep === step.order
+              }"
+            >
+              <span class="step-num">
+                <UIcon v-if="pipeline.completedSteps?.includes(step.order)" name="i-heroicons-check" class="w-3 h-3" />
+                <template v-else>{{ idx + 1 }}</template>
+              </span>
+              <span class="step-role">{{ step.roleName || 'Unassigned' }}</span>
+            </div>
+            <div v-if="pipeline.steps.length > 5" class="step-chip more">
+              +{{ pipeline.steps.length - 5 }} more
+            </div>
+          </div>
+
+          <div class="card-meta">
+            <span class="meta-item">
+              <UIcon name="i-heroicons-clock" class="w-3 h-3" />
+              Last run: {{ formatDate(pipeline.lastRunAt) }}
+            </span>
+            <span class="meta-item">
+              <UIcon name="i-heroicons-list-bullet" class="w-3 h-3" />
+              {{ pipeline.steps.length }} steps
+            </span>
+          </div>
+        </div>
+
+        <div class="card-actions">
+          <UButton 
+            size="xs" 
+            :loading="running === pipeline.id"
+            :disabled="pipeline.status === 'running'"
+            @click="runPipeline(pipeline)"
+          >
+            <UIcon name="i-heroicons-play" class="w-4 h-4" />
+            Run
+          </UButton>
+          <UButton variant="ghost" size="xs" @click="openRunHistory(pipeline)" title="Run History">
+            <UIcon name="i-heroicons-clock" class="w-4 h-4" />
+          </UButton>
+          <UButton variant="ghost" size="xs" @click="openEditModal(pipeline)">
+            <UIcon name="i-heroicons-pencil-square" class="w-4 h-4" />
+          </UButton>
+          <UButton variant="ghost" size="xs" color="error" @click="confirmDelete(pipeline)">
+            <UIcon name="i-heroicons-trash" class="w-4 h-4" />
+          </UButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create/Edit Modal -->
+    <AppModal 
+      v-model:open="showModal" 
+      :title="editingPipeline ? 'Edit Pipeline' : 'Create Pipeline'"
+      size="2xl"
+      @close="closeModal"
+    >
+      <form @submit.prevent="savePipeline" class="modal-form">
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div class="form-group">
+            <label>Name</label>
+            <UInput v-model="form.name" placeholder="e.g., code-review-pipeline" required />
+          </div>
+          
+          <div class="form-group">
+            <label>Description</label>
+            <UInput v-model="form.description" placeholder="Brief description" />
+          </div>
+        </div>
+        
+        <PipelineEditor
+          :steps="form.steps"
+          :roles="roles || []"
+          @update:steps="updateSteps"
+          @add-step="addStep"
+          @remove-step="removeStep"
+          @update-step="updateStep"
+        />
+        
+        <div class="form-actions">
+          <!-- Auto-save indicator (only when editing) -->
+          <div v-if="editingPipeline" class="auto-save-indicator">
+            <template v-if="autoSaving">
+              <UIcon name="i-heroicons-arrow-path" class="w-4 h-4 animate-spin text-blue-500" />
+              <span class="text-blue-500">Saving...</span>
+            </template>
+            <template v-else-if="autoSaveError">
+              <UIcon name="i-heroicons-exclamation-circle" class="w-4 h-4 text-red-500" />
+              <span class="text-red-500">{{ autoSaveError }}</span>
+              <UButton size="xs" variant="ghost" @click="autoSaveError = null">Dismiss</UButton>
+            </template>
+            <template v-else-if="autoSaveLastSaved">
+              <UIcon name="i-heroicons-check-circle" class="w-4 h-4 text-green-500" />
+              <span class="text-green-500">Saved {{ formatAutoSaveTime(autoSaveLastSaved) }}</span>
+            </template>
+            <template v-else-if="hasUnsavedChanges">
+              <UIcon name="i-heroicons-pencil" class="w-4 h-4 text-amber-500" />
+              <span class="text-amber-500">Unsaved changes</span>
+            </template>
+          </div>
+          <div v-else class="auto-save-indicator" />
+          
+          <UButton variant="outline" type="button" @click="closeModal">Cancel</UButton>
+          <UButton type="submit" :loading="saving">
+            {{ editingPipeline ? 'Save Changes' : 'Create Pipeline' }}
+          </UButton>
+        </div>
+      </form>
+    </AppModal>
+
+    <!-- Delete Confirmation Modal -->
+    <AppModal v-model:open="showDeleteConfirm" title="Delete Pipeline">
+      <div class="text-center py-4">
+        <UIcon name="i-heroicons-exclamation-triangle" class="w-12 h-12 text-amber-500 mx-auto mb-4" />
+        <p>Are you sure you want to delete <strong>{{ pipelineToDelete?.name }}</strong>?</p>
+        <p class="text-sm text-muted mt-2">This action cannot be undone.</p>
+      </div>
+      
+      <template #footer>
+        <UButton variant="outline" @click="showDeleteConfirm = false">Cancel</UButton>
+        <UButton color="error" :loading="deleting" @click="deletePipeline">
+          Delete Pipeline
+        </UButton>
+      </template>
+    </AppModal>
+
+    <!-- Run History Modal -->
+    <AppModal v-model:open="showRunHistory" :title="`Run History: ${runHistoryPipeline?.name || ''}`" size="xl">
+      <div class="run-history-content">
+        <div v-if="loadingHistory" class="loading-history">
+          <UIcon name="i-heroicons-arrow-path" class="w-6 h-6 animate-spin" />
+          <p>Loading run history...</p>
+        </div>
+        
+        <div v-else-if="!runHistory.length" class="empty-history">
+          <UIcon name="i-heroicons-clock" class="w-10 h-10" />
+          <p>No runs yet</p>
+          <p class="text-sm">Run this pipeline to see history here</p>
+        </div>
+        
+        <div v-else class="run-list">
+          <div 
+            v-for="run in runHistory" 
+            :key="run.runId"
+            class="run-item"
+          >
+            <div class="run-header">
+              <div 
+                class="run-status-badge"
+                :style="{ 
+                  color: getRunStatusColor(run.status),
+                  background: getRunStatusBg(run.status)
+                }"
+              >
+                <UIcon 
+                  :name="run.status === 'completed' ? 'i-heroicons-check-circle' : run.status === 'failed' ? 'i-heroicons-x-circle' : 'i-heroicons-arrow-path'"
+                  :class="['w-4 h-4', run.status === 'running' ? 'animate-spin' : '']"
+                />
+                {{ run.status }}
+              </div>
+              <span class="run-date">{{ formatDate(run.startedAt) }}</span>
+            </div>
+            
+            <div class="run-details">
+              <div class="run-progress">
+                <div class="progress-bar">
+                  <div 
+                    class="progress-fill completed" 
+                    :style="{ width: `${(run.completedSteps / run.totalSteps) * 100}%` }"
+                  />
+                  <div 
+                    v-if="run.failedSteps > 0"
+                    class="progress-fill failed" 
+                    :style="{ 
+                      width: `${(run.failedSteps / run.totalSteps) * 100}%`,
+                      marginLeft: `${(run.completedSteps / run.totalSteps) * 100}%`
+                    }"
+                  />
+                </div>
+                <span class="progress-text">
+                  {{ run.completedSteps }}/{{ run.totalSteps }} steps
+                  <span v-if="run.failedSteps > 0" class="failed-text">({{ run.failedSteps }} failed)</span>
+                </span>
+              </div>
+              
+              <div class="run-meta">
+                <span class="meta-item">
+                  <UIcon name="i-heroicons-clock" class="w-3 h-3" />
+                  {{ formatDuration(run.duration) }}
+                </span>
+                <span class="run-id">{{ run.runId.slice(0, 20) }}...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <UButton variant="outline" @click="showRunHistory = false">Close</UButton>
+      </template>
+    </AppModal>
+  </div>
+</template>
+
+<style scoped>
+.pipelines-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 32px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--swarm-text-muted);
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  text-align: center;
+  color: var(--swarm-text-muted);
+  gap: 12px;
+}
+
+.empty-state h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+  margin: 0;
+}
+
+.empty-state p {
+  font-size: 14px;
+  margin: 0;
+}
+
+.pipelines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pipeline-card {
+  background: var(--swarm-bg-card);
+  border: 1px solid var(--swarm-border);
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.pipeline-card:hover {
+  border-color: var(--swarm-accent);
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px;
+  border-bottom: 1px solid var(--swarm-border);
+}
+
+.pipeline-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+  margin: 0 0 4px 0;
+}
+
+.pipeline-desc {
+  font-size: 13px;
+  color: var(--swarm-text-muted);
+  margin: 0;
+}
+
+.status-badge {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: capitalize;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+.steps-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.step-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--swarm-bg-hover);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.step-num {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--swarm-accent-bg);
+  color: var(--swarm-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.step-role {
+  color: var(--swarm-text-secondary);
+}
+
+.step-chip.more {
+  color: var(--swarm-text-muted);
+  font-style: italic;
+}
+
+.step-chip.step-completed {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.step-chip.step-completed .step-num {
+  background: #10b981;
+  color: white;
+}
+
+.step-chip.step-running {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  animation: pulse-blue 2s infinite;
+}
+
+.step-chip.step-running .step-num {
+  background: #3b82f6;
+  color: white;
+}
+
+.step-chip.step-failed {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.step-chip.step-failed .step-num {
+  background: #ef4444;
+  color: white;
+}
+
+@keyframes pulse-blue {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.step-progress {
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+.card-meta {
+  display: flex;
+  gap: 16px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--swarm-text-muted);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--swarm-bg-hover);
+  border-top: 1px solid var(--swarm-border);
+}
+
+.modal-content {
+  padding: 20px;
+  min-width: 400px;
+  max-width: 500px;
+}
+
+.modal-content.wide {
+  max-width: 700px;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--swarm-text-primary);
+  margin: 0;
+}
+
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.form-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--swarm-text-secondary);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--swarm-border);
+}
+
+.auto-save-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  margin-right: auto;
+  min-height: 24px;
+}
+
+.auto-save-indicator span {
+  white-space: nowrap;
+}
+
+.delete-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.delete-message p {
+  margin: 0;
+  color: var(--swarm-text-secondary);
+}
+
+.delete-message .text-muted {
+  color: var(--swarm-text-muted);
+}
+
+/* Run History Modal */
+.run-history-content {
+  min-height: 200px;
+}
+
+.loading-history,
+.empty-history {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--swarm-text-muted);
+  gap: 8px;
+}
+
+.empty-history p {
+  margin: 0;
+}
+
+.run-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.run-item {
+  background: var(--swarm-bg-hover);
+  border: 1px solid var(--swarm-border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.run-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.run-status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: capitalize;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.run-date {
+  font-size: 12px;
+  color: var(--swarm-text-muted);
+}
+
+.run-details {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.run-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--swarm-border);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-fill {
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transition: width 0.3s;
+}
+
+.progress-fill.completed {
+  background: #10b981;
+}
+
+.progress-fill.failed {
+  background: #ef4444;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: var(--swarm-text-secondary);
+  white-space: nowrap;
+}
+
+.failed-text {
+  color: #ef4444;
+}
+
+.run-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.run-id {
+  font-size: 11px;
+  color: var(--swarm-text-muted);
+  font-family: monospace;
+}
+
+@media (max-width: 640px) {
+  .pipelines-page {
+    padding: 16px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+  }
+  
+  .modal-content {
+    min-width: unset;
+    width: 100%;
+  }
+}
+</style>
