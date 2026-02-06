@@ -35,9 +35,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Set auth cookie (httpOnly for security, 7 day expiry)
+  // Don't require secure for local/tailscale HTTP access
+  const isHttps = getRequestURL(event).protocol === 'https:'
   setCookie(event, 'swarmops_auth', body.token.trim(), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
+    secure: isHttps,
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/'
