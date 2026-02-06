@@ -30,6 +30,18 @@ Interview → Specification → Build → Review → Complete
 - **Spawn Safeguards** — Circuit breaker, rate limiting, and task deduplication to prevent runaway sessions
 - **Real-time Dashboard** — Monitor workers, view logs, manage projects
 
+## Screenshots
+
+<p align="center">
+  <img src="docs/workers.png" alt="Workers Dashboard" width="800"><br>
+  <em>Real-time worker monitoring — 24 parallel agents building a project</em>
+</p>
+
+<p align="center">
+  <img src="docs/dashboard.png" alt="Project Dashboard" width="800"><br>
+  <em>Task progress view with auto-advance status indicators</em>
+</p>
+
 ## Architecture
 
 SwarmOps consists of:
