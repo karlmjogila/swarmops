@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from '../../utils/paths'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'

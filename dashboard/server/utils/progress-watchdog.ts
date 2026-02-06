@@ -1,4 +1,4 @@
-import { PROJECTS_DIR as PROJ_DIR } from '~/server/utils/paths'
+import { PROJECTS_DIR as PROJ_DIR } from './paths'
 /**
  * Progress Watchdog
  * 

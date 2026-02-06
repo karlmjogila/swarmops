@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from './paths'
 /**
  * Task Registry - Track task states to prevent duplicate spawns
  * 

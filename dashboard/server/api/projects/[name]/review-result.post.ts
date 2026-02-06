@@ -1,4 +1,4 @@
-import { DASHBOARD_PATH } from '~/server/utils/paths'
+import { DASHBOARD_PATH } from '../../../utils/paths'
 import { appendFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'

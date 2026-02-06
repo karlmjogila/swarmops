@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from './paths'
 /**
  * TaskQueue - Manages work-queue.json for dashboard visibility
  * 

@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from '../../../utils/paths'
 import { invalidateRoleCache } from '../../../utils/role-loader'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'

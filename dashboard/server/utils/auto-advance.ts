@@ -1,4 +1,4 @@
-import { DASHBOARD_PATH, SKILLS_DIR } from '~/server/utils/paths'
+import { DASHBOARD_PATH, SKILLS_DIR } from './paths'
 import { readFile, writeFile, appendFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'

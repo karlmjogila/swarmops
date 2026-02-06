@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from './paths'
 /**
  * PhaseAdvancer - Advance pipeline to the next phase after review approval
  * 

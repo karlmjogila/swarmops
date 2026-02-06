@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR } from './paths'
 /**
  * EscalationStore - Manages escalations when workers fail after max retries
  * 

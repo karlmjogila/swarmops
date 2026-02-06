@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR, SKILLS_DIR, DASHBOARD_PATH } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR, SKILLS_DIR, DASHBOARD_PATH } from '../../../utils/paths'
 import { readFile, writeFile, appendFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'

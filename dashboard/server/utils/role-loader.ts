@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR, PROMPTS_DIR } from '~/server/utils/paths'
+import { ORCHESTRATOR_DATA_DIR, PROMPTS_DIR } from './paths'
 /**
  * RoleLoader - Dynamic role configuration lookup
  * 
