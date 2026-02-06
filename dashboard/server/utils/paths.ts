@@ -1,10 +1,11 @@
-import { join } from 'path'
+import { join, resolve } from 'path'
 
 // Centralized path configuration
 // All paths can be overridden via environment variables
+// Uses resolve() to handle relative paths like '../projects' correctly
 
-export const ORCHESTRATOR_DATA_DIR = process.env.ORCHESTRATOR_DATA_DIR || join(process.cwd(), 'data', 'orchestrator')
-export const PROJECTS_DIR = process.env.PROJECTS_DIR || join(process.cwd(), 'projects')
+export const ORCHESTRATOR_DATA_DIR = resolve(process.cwd(), process.env.ORCHESTRATOR_DATA_DIR || '../data/orchestrator')
+export const PROJECTS_DIR = resolve(process.cwd(), process.env.PROJECTS_DIR || '../projects')
 export const DASHBOARD_PATH = process.env.DASHBOARD_PATH || process.cwd()
 
 // Derived paths

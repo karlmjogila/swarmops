@@ -57,10 +57,11 @@ if [ ! -f .env ]; then
     else
         cat > .env << 'EOF'
 # SwarmOps Configuration
-NUXT_PUBLIC_API_URL=http://localhost:3939
-NUXT_GATEWAY_URL=http://127.0.0.1:18789
-NUXT_PROJECTS_DIR=../projects
-NUXT_ORCHESTRATOR_DATA_DIR=../data/orchestrator
+HOST=0.0.0.0
+PORT=3000
+PROJECTS_DIR=../projects
+ORCHESTRATOR_DATA_DIR=../data/orchestrator
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
 EOF
         echo -e "${GREEN}✓ Created default .env${NC}"
     fi
