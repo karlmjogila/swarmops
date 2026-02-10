@@ -34,7 +34,7 @@ import {
   DEFAULT_RETRY_POLICY,
 } from './retry-handler'
 import { createEscalation } from './escalation-store'
-import { ORCHESTRATOR_DATA_DIR } from './paths'
+import { ORCHESTRATOR_DATA_DIR, DASHBOARD_URL } from './paths'
 
 const RUNS_DIR = join(ORCHESTRATOR_DATA_DIR, 'runs')
 
@@ -968,7 +968,7 @@ function buildTaskPrompt(opts: {
   lines.push('When you finish your task, you **MUST** call the completion webhook:')
   lines.push('')
   lines.push('```bash')
-  lines.push(`curl -X POST http://localhost:3939/api/orchestrator/worker-complete \\`)
+  lines.push(`curl -X POST ${DASHBOARD_URL}/api/orchestrator/worker-complete \\`)
   lines.push(`  -H "Content-Type: application/json" \\`)
   lines.push(`  -d '{"runId": "${opts.runId}", "stepOrder": ${opts.stepOrder}, "status": "completed", "output": "YOUR_SUMMARY_HERE"}'`)
   lines.push('```')

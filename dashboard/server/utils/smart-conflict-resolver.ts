@@ -15,6 +15,7 @@ import { promisify } from 'util'
 import { readFile, writeFile } from 'fs/promises'
 import { join } from 'path'
 import { spawnSession } from './gateway-client'
+import { DASHBOARD_URL } from './paths'
 import { getPhaseState, getWorkerTaskContexts } from './phase-collector'
 import { stageFile, commitMerge, getConflictContent } from './conflict-resolver'
 
@@ -244,7 +245,7 @@ ${conflictDetails.join('\n---\n')}
 
 4. **Report completion**:
    \`\`\`bash
-   curl -X POST http://localhost:3939/api/orchestrator/worker-complete \\
+   curl -X POST ${DASHBOARD_URL}/api/orchestrator/worker-complete \\
      -H "Content-Type: application/json" \\
      -d '{"runId": "${runId}", "stepOrder": -1, "status": "completed", "output": "Smart-resolved ${conflictFiles.length} conflict(s)"}'
    \`\`\`

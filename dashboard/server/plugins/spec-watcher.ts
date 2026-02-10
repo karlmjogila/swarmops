@@ -1,4 +1,4 @@
-import { PROJECTS_DIR as PROJ_DIR } from '../utils/paths'
+import { PROJECTS_DIR as PROJ_DIR, DASHBOARD_URL } from '../utils/paths'
 /**
  * Spec File Watcher Plugin
  * 
@@ -80,7 +80,7 @@ async function triggerBuildPhase(projectName: string): Promise<void> {
   triggeredProjects.add(projectName)
 
   try {
-    const response = await fetch(`http://localhost:3939/api/projects/${projectName}/spec-complete`, {
+    const response = await fetch(`${DASHBOARD_URL}/api/projects/${projectName}/spec-complete`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ source: 'file-watcher' })

@@ -132,8 +132,8 @@ export class OpenClawService extends EventEmitter {
   ) {
     super();
     this.config = {
-      cliBinary: config?.cliBinary ?? 'openclaw',
-      gatewayUrl: config?.gatewayUrl ?? 'http://localhost:3939',
+      cliBinary: config?.cliBinary ?? 'clawdbot',
+      gatewayUrl: config?.gatewayUrl ?? 'http://localhost:18789',
       gatewayToken: config?.gatewayToken ?? '',
       defaultTimeoutMs: config?.defaultTimeoutMs ?? 300000, // 5 minutes
       mode: config?.mode ?? 'http',

@@ -84,7 +84,7 @@ export default defineEventHandler(async (event): Promise<{ logs: LogMessage[] }>
     throw createError({ statusCode: 404, message: 'Session not found' })
   }
   
-  const sessionsDir = join(homedir(), '.openclaw', 'agents', 'main', 'sessions')
+  const sessionsDir = join(homedir(), '.clawdbot', 'agents', 'main', 'sessions')
   const sessionPath = join(sessionsDir, transcriptFile)
   
   try {

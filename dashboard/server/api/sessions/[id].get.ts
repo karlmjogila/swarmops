@@ -18,7 +18,7 @@ interface SessionDetail {
 
 async function getSessionStore(): Promise<any> {
   // Read the sessions store directly for detailed info
-  const storePath = join(homedir(), '.openclaw', 'agents', 'main', 'sessions', 'sessions.json')
+  const storePath = join(homedir(), '.clawdbot', 'agents', 'main', 'sessions', 'sessions.json')
   try {
     const data = await readFile(storePath, 'utf-8')
     return JSON.parse(data)

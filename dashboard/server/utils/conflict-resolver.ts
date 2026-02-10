@@ -7,6 +7,7 @@
 import { exec as execCallback } from 'child_process'
 import { promisify } from 'util'
 import { spawnSession } from './gateway-client'
+import { DASHBOARD_URL } from './paths'
 
 const exec = promisify(execCallback)
 
@@ -271,7 +272,7 @@ ${fileList}
 ## When Done
 Report completion with:
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/worker-complete \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/worker-complete \\
   -H "Content-Type: application/json" \\
   -d '{"runId": "${opts.runId}", "stepOrder": -1, "status": "completed", "output": "Resolved ${opts.conflictFiles.length} conflict(s) in merge from ${opts.sourceBranch}"}'
 \`\`\`

@@ -1,4 +1,4 @@
-import { PROJECTS_DIR as PROJ_DIR } from './paths'
+import { PROJECTS_DIR as PROJ_DIR, DASHBOARD_URL } from './paths'
 /**
  * Progress Watchdog
  * 
@@ -258,7 +258,7 @@ async function recoverStalledProject(projectName: string): Promise<WatchdogResul
   
   // Trigger the orchestrator to continue
   try {
-    const response = await fetch(`http://localhost:3939/api/projects/${projectName}/orchestrate`, {
+    const response = await fetch(`${DASHBOARD_URL}/api/projects/${projectName}/orchestrate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 

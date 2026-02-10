@@ -1,4 +1,4 @@
-import { DASHBOARD_PATH, SKILLS_DIR } from './paths'
+import { DASHBOARD_PATH, SKILLS_DIR, DASHBOARD_URL } from './paths'
 import { readFile, writeFile, appendFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
@@ -23,7 +23,7 @@ interface WorkerInfo {
 }
 
 async function updateWorkersRegistry(worker: WorkerInfo) {
-  const workersFile = join(homedir(), '.openclaw', 'workspace', 'swarmops-workers.json')
+  const workersFile = join(homedir(), '.clawdbot', 'workspace', 'swarmops-workers.json')
   
   let workers: WorkerInfo[] = []
   try {
@@ -293,7 +293,7 @@ Then update \`${projectPath}/progress.md\` with the task list.
 ### Signal Completion
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/spec-complete \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/spec-complete \\
   -H "Content-Type: application/json" \\
   -d '{"summary": "Brief description of what was planned"}'
 \`\`\`
@@ -555,7 +555,7 @@ ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated 
 Review the code, check for bugs, then post results:
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/review-result \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/review-result \\
   -H "Content-Type: application/json" \\
   -d '{"status": "approved"}' # or "request_changes" with findings
 \`\`\`
@@ -602,7 +602,7 @@ ${webDesignSkill}
 ${commitInstructions}
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/task-complete \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/task-complete \\
   -H "Content-Type: application/json" \\
   -d '{"taskId": "${task.id}"}'
 \`\`\`

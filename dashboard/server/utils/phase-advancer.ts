@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR } from './paths'
+import { ORCHESTRATOR_DATA_DIR, DASHBOARD_URL } from './paths'
 /**
  * PhaseAdvancer - Advance pipeline to the next phase after review approval
  * 
@@ -105,7 +105,7 @@ export async function advanceToNextPhase(opts: {
 
   try {
     // Call the orchestrate endpoint directly to spawn workers with full pipeline tracking
-    const response = await fetch(`http://localhost:3939/api/projects/${projectName}/orchestrate`, {
+    const response = await fetch(`${DASHBOARD_URL}/api/projects/${projectName}/orchestrate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'start' }),

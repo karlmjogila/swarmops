@@ -19,6 +19,7 @@ import {
   clearRetryState,
   DEFAULT_RETRY_POLICY,
 } from '../../../utils/retry-handler'
+import { DASHBOARD_URL } from '../../../utils/paths'
 import { createEscalation, resolveEscalationsByTaskId } from '../../../utils/escalation-store'
 import { createWorktree, getWorkerBranch } from '../../../utils/worktree-manager'
 import { wakeAgent } from '../../../utils/agent'
@@ -177,7 +178,7 @@ async function handleWorkerFailure(params: {
       console.log(`[task-complete-retry] Executing retry for worker ${taskId}`)
       
       // Trigger orchestrate to re-spawn
-      const response = await fetch(`http://localhost:3939/api/projects/${projectName}/orchestrate`, {
+      const response = await fetch(`${DASHBOARD_URL}/api/projects/${projectName}/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'continue' }),

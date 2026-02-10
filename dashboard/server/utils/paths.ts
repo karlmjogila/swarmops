@@ -7,6 +7,7 @@ import { join, resolve } from 'path'
 export const ORCHESTRATOR_DATA_DIR = resolve(process.cwd(), process.env.ORCHESTRATOR_DATA_DIR || '../data/orchestrator')
 export const PROJECTS_DIR = resolve(process.cwd(), process.env.PROJECTS_DIR || '../projects')
 export const DASHBOARD_PATH = process.env.DASHBOARD_PATH || process.cwd()
+export const DASHBOARD_URL = `http://localhost:${process.env.PORT || 3939}`
 
 // Derived paths
 export const ROLES_FILE = join(ORCHESTRATOR_DATA_DIR, 'roles.json')

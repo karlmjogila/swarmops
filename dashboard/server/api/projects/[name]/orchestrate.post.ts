@@ -1,4 +1,4 @@
-import { ORCHESTRATOR_DATA_DIR, SKILLS_DIR, DASHBOARD_PATH } from '../../../utils/paths'
+import { ORCHESTRATOR_DATA_DIR, SKILLS_DIR, DASHBOARD_PATH, DASHBOARD_URL } from '../../../utils/paths'
 import { readFile, writeFile, appendFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
@@ -80,7 +80,7 @@ interface WorkerInfo {
 
 async function updateWorkersRegistry(worker: WorkerInfo) {
   const { homedir } = await import('os')
-  const workersFile = join(homedir(), '.openclaw', 'workspace', 'swarmops-workers.json')
+  const workersFile = join(homedir(), '.clawdbot', 'workspace', 'swarmops-workers.json')
   
   let workers: WorkerInfo[] = []
   try {
@@ -198,7 +198,7 @@ Be THOROUGH. Check line-by-line. The last reviewer missed a hoisting bug that ca
 
 If you find High/Critical issues, POST your findings to spawn a fixer:
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/review-result \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/review-result \\
   -H "Content-Type: application/json" \\
   -d '{
     "status": "request_changes",
@@ -212,7 +212,7 @@ curl -X POST http://localhost:3939/api/orchestrator/review-result \\
 
 If all good (no High/Critical issues):
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/review-result \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/review-result \\
   -H "Content-Type: application/json" \\
   -d '{"status": "approved", "runId": "${runId}", "phaseNumber": ${phaseNumber}}'
 \`\`\`
@@ -250,7 +250,7 @@ ${workerBranch ? '5. Commit your changes with a clear commit message' : ''}
 ${workerBranch ? '6' : '5'}. After ALL fixes are done, trigger re-review:
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/fix-complete \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/fix-complete \\
   -H "Content-Type: application/json" \\
   -d '{"issuesFixed": 1, "runId": "${runId}", "phaseNumber": ${phaseNumber}}'
 \`\`\`
@@ -305,7 +305,7 @@ ${webDesignSkill}
 ${commitInstructions}
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/task-complete \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/task-complete \\
   -H "Content-Type: application/json" \\
   -d '{"taskId": "${task.id}", "runId": "${runId}", "phaseNumber": ${phaseNumber}}'
 \`\`\`
@@ -448,7 +448,7 @@ async function handleWorkerSpawnFailure(params: {
       console.log(`[orchestrate-retry] Executing retry for worker ${task.id}`)
       
       // Re-trigger orchestrate for this project
-      const response = await fetch(`http://localhost:3939/api/projects/${projectName}/orchestrate`, {
+      const response = await fetch(`${DASHBOARD_URL}/api/projects/${projectName}/orchestrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'continue' }),

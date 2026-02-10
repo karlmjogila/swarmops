@@ -7,6 +7,7 @@
  */
 
 import { spawnSession } from './gateway-client'
+import { DASHBOARD_URL } from './paths'
 import { getRoleConfig, type RoleConfig } from './role-loader'
 import { exec as execCallback } from 'child_process'
 import { promisify } from 'util'
@@ -300,7 +301,7 @@ ${roleConfig.instructions || 'Review the code changes for this phase.'}
 ## IMPORTANT: Report Your Decision
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/review-result \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/review-result \\
   -H "Content-Type: application/json" \\
   -d '{
     "runId": "${runId}",
@@ -376,7 +377,7 @@ ${fixInstructions}
 5. Report completion:
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/fix-complete \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/fix-complete \\
   -H "Content-Type: application/json" \\
   -d '{
     "runId": "${runId}",
@@ -388,7 +389,7 @@ curl -X POST http://localhost:3939/api/orchestrator/fix-complete \\
 
 If you cannot complete the fixes:
 \`\`\`bash
-curl -X POST http://localhost:3939/api/orchestrator/fix-complete \\
+curl -X POST ${DASHBOARD_URL}/api/orchestrator/fix-complete \\
   -H "Content-Type: application/json" \\
   -d '{
     "runId": "${runId}",

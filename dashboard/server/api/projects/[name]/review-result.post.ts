@@ -1,4 +1,4 @@
-import { DASHBOARD_PATH } from '../../../utils/paths'
+import { DASHBOARD_PATH, DASHBOARD_URL } from '../../../utils/paths'
 import { appendFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
@@ -343,7 +343,7 @@ ${f.fix ? `**Suggested Fix:** ${f.fix}` : ''}
 3. After ALL fixes are done, trigger re-review:
 
 \`\`\`bash
-curl -X POST http://localhost:3939/api/projects/${projectName}/fix-complete \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/fix-complete \\
   -H "Content-Type: application/json" \\
   -d '{"issuesFixed": ${fixNeeded.length}}'
 \`\`\`

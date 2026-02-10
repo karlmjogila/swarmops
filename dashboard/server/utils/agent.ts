@@ -1,9 +1,10 @@
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { homedir } from 'os'
+import { DASHBOARD_URL } from './paths'
 
 export async function getGatewayUrl(): Promise<string> {
-  const configPath = join(homedir(), '.openclaw', 'openclaw.json')
+  const configPath = join(homedir(), '.clawdbot', 'clawdbot.json')
   try {
     const configData = await readFile(configPath, 'utf-8')
     const config = JSON.parse(configData)
@@ -58,7 +59,7 @@ ${goal}
 
 **To respond in the interview chat, use:**
 \`\`\`
-curl -X POST http://localhost:3939/api/projects/${projectName}/interview \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/interview \\
   -H "Content-Type: application/json" \\
   -d '{"role": "agent", "content": "YOUR MESSAGE HERE"}'
 \`\`\`
@@ -67,7 +68,7 @@ curl -X POST http://localhost:3939/api/projects/${projectName}/interview \\
 
 When you have enough information, send a friendly closing message and mark complete:
 \`\`\`
-curl -X POST http://localhost:3939/api/projects/${projectName}/interview \\
+curl -X POST ${DASHBOARD_URL}/api/projects/${projectName}/interview \\
   -H "Content-Type: application/json" \\
   -d '{"role": "agent", "content": "Thanks! I think I have everything I need to put together a solid plan. Give me a moment to draft the implementation...", "complete": true}'
 \`\`\`
