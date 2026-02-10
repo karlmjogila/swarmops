@@ -2,7 +2,7 @@ import { spawn } from 'child_process'
 
 export default defineEventHandler(async (event) => {
   return new Promise((resolve, reject) => {
-    const child = spawn('openclaw', ['sessions', 'list', '--json'], {
+    const child = spawn('clawdbot', ['sessions', 'list', '--json'], {
       stdio: 'pipe'
     })
     
