@@ -11,13 +11,14 @@ const publicRoutes = [
   '/_ws', // WebSocket might handle its own auth
 ]
 
-// API routes that agents call (allow without auth from localhost)
+// API routes that agents/internal services call (allow without auth from localhost)
 const agentApiPatterns = [
   /^\/api\/projects\/[^/]+\/task-complete$/,
   /^\/api\/projects\/[^/]+\/review-result$/,
   /^\/api\/projects\/[^/]+\/spec-complete$/,
   /^\/api\/projects\/[^/]+\/fix-complete$/,
   /^\/api\/projects\/[^/]+\/interview$/,
+  /^\/api\/projects\/[^/]+\/orchestrate$/,
   /^\/api\/orchestrator\/review-result$/,
   /^\/api\/orchestrator\/worker-complete$/,
   /^\/api\/orchestrator\/merge-phase$/,
