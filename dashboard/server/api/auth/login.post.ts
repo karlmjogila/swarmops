@@ -16,10 +16,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const config = useRuntimeConfig(event)
-  
+  const gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN || ''
+
   // If no gateway token is configured, auth is disabled
-  if (!config.gatewayToken) {
+  if (!gatewayToken) {
     throw createError({
       statusCode: 400,
       statusMessage: 'Authentication is not configured on this server'
@@ -27,7 +27,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate token
-  if (body.token.trim() !== config.gatewayToken) {
+  if (body.token.trim() !== gatewayToken) {
     throw createError({
       statusCode: 401,
       statusMessage: 'Invalid token'

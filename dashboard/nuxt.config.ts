@@ -27,8 +27,8 @@ export default defineNuxtConfig({
     // Server-side only (set via env vars in production)
     projectsDir: process.env.PROJECTS_DIR || '../projects',
     orchestratorDataDir: process.env.ORCHESTRATOR_DATA_DIR || '../data/orchestrator',
-    gatewayUrl: process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:18789',
-    gatewayToken: process.env.OPENCLAW_GATEWAY_TOKEN || ''
+    // Gateway config (OPENCLAW_GATEWAY_URL, OPENCLAW_GATEWAY_TOKEN) is read
+    // directly via process.env in server code to avoid Nuxt's NUXT_ prefix requirement
   },
 
   nitro: {

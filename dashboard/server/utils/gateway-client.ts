@@ -28,9 +28,8 @@ let _gatewayToken: string | null = null
 
 function getGatewayConfig() {
   if (!_gatewayUrl) {
-    const config = useRuntimeConfig()
-    _gatewayUrl = config.gatewayUrl || 'http://127.0.0.1:18789'
-    _gatewayToken = config.gatewayToken || ''
+    _gatewayUrl = process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:18789'
+    _gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN || ''
   }
   return { url: _gatewayUrl, token: _gatewayToken! }
 }

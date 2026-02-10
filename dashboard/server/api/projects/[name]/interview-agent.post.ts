@@ -54,11 +54,10 @@ async function saveImageToTemp(dataUrl: string): Promise<string | null> {
 // Simple lock to prevent concurrent interview agents per project
 const activeInterviews = new Map<string, Promise<any>>()
 
-function getGatewayConfig(event: any) {
-  const config = useRuntimeConfig(event)
+function getGatewayConfig() {
   return {
-    url: config.gatewayUrl || 'http://127.0.0.1:18789',
-    token: config.gatewayToken || ''
+    url: process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:18789',
+    token: process.env.OPENCLAW_GATEWAY_TOKEN || ''
   }
 }
 
@@ -205,7 +204,7 @@ export default defineEventHandler(async (event) => {
     return { ok: true, message: 'Interview already complete', spawned: false }
   }
 
-  const gw = getGatewayConfig(event)
+  const gw = getGatewayConfig()
 
   // Build message content with image if provided
   let messageContent = body.userMessage || ''

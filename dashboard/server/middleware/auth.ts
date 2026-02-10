@@ -79,14 +79,14 @@ export default defineEventHandler(async (event) => {
   }
 
   // Check if auth is enabled (only when OPENCLAW_GATEWAY_TOKEN is set)
-  const config = useRuntimeConfig(event)
-  if (!config.gatewayToken) {
+  const gatewayToken = process.env.OPENCLAW_GATEWAY_TOKEN || ''
+  if (!gatewayToken) {
     // No token configured = auth disabled (dev mode)
     return
   }
 
   // Check for auth cookie or header
-  const authToken = getCookie(event, 'swarmops_auth') || 
+  const authToken = getCookie(event, 'swarmops_auth') ||
                     getHeader(event, 'x-swarmops-token')
 
   if (!authToken) {
@@ -102,7 +102,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // Validate token matches gateway token
-  if (authToken !== config.gatewayToken) {
+  if (authToken !== gatewayToken) {
     // Invalid token
     deleteCookie(event, 'swarmops_auth')
     

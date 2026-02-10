@@ -14,11 +14,10 @@ interface ChatResponse {
   timestamp: string
 }
 
-function getGatewayConfig(event: any) {
-  const config = useRuntimeConfig(event)
+function getGatewayConfig() {
   return {
-    url: config.gatewayUrl || 'http://127.0.0.1:18789',
-    token: config.gatewayToken || ''
+    url: process.env.OPENCLAW_GATEWAY_URL || 'http://127.0.0.1:18789',
+    token: process.env.OPENCLAW_GATEWAY_TOKEN || ''
   }
 }
 
@@ -110,7 +109,7 @@ export default defineEventHandler(async (event): Promise<ChatResponse> => {
     })
   }
 
-  const gw = getGatewayConfig(event)
+  const gw = getGatewayConfig()
 
   try {
     let messageContent = body.message?.trim() || ''
