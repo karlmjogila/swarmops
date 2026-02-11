@@ -1,4 +1,5 @@
 import { DASHBOARD_PATH, SKILLS_DIR, DASHBOARD_URL } from './paths'
+import { buildSkillBlock } from './skill-loader'
 import { readFile, writeFile, appendFile } from 'fs/promises'
 import { join } from 'path'
 import { randomUUID } from 'crypto'
@@ -511,30 +512,8 @@ interface WorkerPromptOpts {
   workerBranch?: string
 }
 
-// Web design keywords that trigger the web-visuals skill
-const WEB_DESIGN_KEYWORDS = [
-  'html', 'css', 'landing', 'website', 'webpage', 'web page', 'hero', 
-  'ui', 'interface', 'design', 'styling', 'layout', 'beautiful', 
-  'modern', 'responsive', 'frontend', 'front-end', 'visual'
-]
-
-function isWebDesignTask(task: any, projectName: string): boolean {
-  const searchText = `${task.title} ${task.id} ${projectName}`.toLowerCase()
-  return WEB_DESIGN_KEYWORDS.some(kw => searchText.includes(kw))
-}
-
-async function loadWebDesignSkill(): Promise<string | null> {
-  try {
-    const { readFile } = await import('fs/promises')
-    const skillPath = join(SKILLS_DIR, 'web-visuals/SKILL.md')
-    const content = await readFile(skillPath, 'utf-8')
-    // Remove YAML frontmatter
-    const withoutFrontmatter = content.replace(/^---[\s\S]*?---\n*/, '')
-    return withoutFrontmatter
-  } catch {
-    return null
-  }
-}
+// Skills are now loaded dynamically from the skills directory
+// See: dashboard/server/utils/skill-loader.ts
 
 async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const { task, projectName, projectPath, dashboardPath, worktreePath, workerBranch } = opts
@@ -570,23 +549,8 @@ Then mark the review task done in progress.md.`
     : `2. When done, update progress.md - change [ ] to [x] for your task
 3. Call the task-complete endpoint to continue the build:`
   
-  // Load web design skill if this is a web/UI task
-  let webDesignSkill = ''
-  if (isWebDesignTask(task, projectName)) {
-    const skill = await loadWebDesignSkill()
-    if (skill) {
-      webDesignSkill = `
-## 🎨 Web Design Excellence Skill
-
-You are building a visual web interface. Follow this skill guide for beautiful results:
-
-${skill}
-
----
-`
-      console.log(`[auto-advance] Web design skill injected for task: ${task.id}`)
-    }
-  }
+  // Load matching skills dynamically based on task content
+  const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
   
   return `[SWARMOPS BUILDER] Project: ${projectName}
 Task: ${task.title}
@@ -596,7 +560,7 @@ Task ID: ${task.id}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree. Make your changes and commit them before completing.` : ''}
-${webDesignSkill}
+${skillBlock}
 ## Instructions
 1. Implement: ${task.title}
 ${commitInstructions}
