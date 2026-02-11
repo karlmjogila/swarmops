@@ -821,7 +821,7 @@ async function testReviewPromptBuilding() {
   log('\n📝 Test: Review and fixer prompt building')
   
   // Test fixer prompt building
-  const fixerPrompt = buildFixerPrompt({
+  const fixerPrompt = await buildFixerPrompt({
     runId: 'test-run',
     phaseName: 'test-phase',
     phaseNumber: 1,

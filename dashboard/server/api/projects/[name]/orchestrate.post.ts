@@ -122,6 +122,9 @@ async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const workDir = worktreePath || dashboardPath
   
   if (task.role === 'reviewer') {
+    // Load matching skills for reviewer (e.g., security-hardening for security-reviewer)
+    const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
+
     return `[SWARMOPS REVIEWER] Project: ${projectName}
 Task: ${task.title}
 Task ID: ${task.id}
@@ -133,7 +136,7 @@ You are a senior code reviewer. Your job is to CATCH BUGS before they ship.
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
-
+${skillBlock}
 ## Review Checklist (MUST follow)
 
 ### 1. List Modified Files
@@ -200,6 +203,9 @@ The server will mark the review task as done automatically.`
   }
   
   if (task.role === 'fixer') {
+    // Load matching skills for fixer (same domain expertise as the code being fixed)
+    const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
+
     // Fixer role - addresses issues found by reviewer
   return `[SWARMOPS FIXER] Project: ${projectName}
 Task: Fix issues from code review
@@ -212,7 +218,7 @@ You are a fixer agent addressing issues found during code review.
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
-
+${skillBlock}
 ## Issues to Fix
 
 The reviewer found these problems that MUST be fixed:

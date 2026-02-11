@@ -520,6 +520,9 @@ async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const workDir = worktreePath || dashboardPath
   
   if (task.role === 'reviewer' || task.role === 'security-reviewer') {
+    // Load matching skills for reviewer (e.g., security-hardening for security-reviewer)
+    const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
+
     return `[SWARMOPS REVIEWER] Project: ${projectName}
 Task: ${task.title}
 Task ID: ${task.id}
@@ -530,7 +533,7 @@ You are a senior code reviewer.
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
-
+${skillBlock}
 Review the code, check for bugs, then post results:
 
 \`\`\`bash

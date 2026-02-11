@@ -9,6 +9,7 @@
 import { spawnSession } from './gateway-client'
 import { DASHBOARD_URL } from './paths'
 import { getRoleConfig, type RoleConfig } from './role-loader'
+import { buildSkillBlock } from './skill-loader'
 import { exec as execCallback } from 'child_process'
 import { promisify } from 'util'
 
@@ -228,7 +229,7 @@ async function spawnChainReviewer(
   const roleId = request.currentReviewerRole || 'reviewer'
   const roleConfig = await getRoleConfig(roleId)
 
-  const reviewPrompt = buildReviewPrompt({
+  const reviewPrompt = await buildReviewPrompt({
     ...request,
     roleConfig,
     projectName,
@@ -264,19 +265,26 @@ async function spawnChainReviewer(
 /**
  * Build review prompt using role configuration
  */
-function buildReviewPrompt(opts: PhaseReviewRequest & {
+async function buildReviewPrompt(opts: PhaseReviewRequest & {
   roleConfig: RoleConfig
   projectName: string
-}): string {
+}): Promise<string> {
   const {
     runId, phaseName, phaseNumber, projectDir, phaseBranch,
     targetBranch = 'main', roleConfig, projectName,
-    reviewChain, currentReviewerIndex,
+    reviewChain, currentReviewerIndex, currentReviewerRole,
   } = opts
 
   const chainInfo = reviewChain
     ? `\n\n## Review Chain\nYou are reviewer ${(currentReviewerIndex || 0) + 1} of ${reviewChain.length}: ${reviewChain.join(' → ')}\nYour role: **${roleConfig.name}**`
     : ''
+
+  // Load matching skills for this reviewer role (e.g., security-hardening for security-reviewer)
+  const skillBlock = await buildSkillBlock(
+    roleConfig.name || currentReviewerRole || 'reviewer',
+    currentReviewerRole || 'reviewer',
+    projectName
+  )
 
   return `[SWARMOPS ${roleConfig.name?.toUpperCase() || 'REVIEWER'}] Phase: ${phaseName} (Phase ${phaseNumber})
 Run ID: ${runId}
@@ -284,7 +292,7 @@ ${chainInfo}
 
 ## Your Role
 ${roleConfig.instructions || 'Review the code changes for this phase.'}
-
+${skillBlock}
 ## Review Instructions
 1. Navigate to the project: \`cd ${projectDir}\`
 2. Review the diff between ${phaseBranch} and ${targetBranch}:
@@ -347,7 +355,7 @@ export function listPendingReviews(): PhaseReviewRequest[] {
 /**
  * Build a prompt for a fixer agent
  */
-export function buildFixerPrompt(opts: {
+export async function buildFixerPrompt(opts: {
   runId: string
   phaseName: string
   phaseNumber: number
@@ -355,15 +363,20 @@ export function buildFixerPrompt(opts: {
   phaseBranch: string
   fixInstructions: string
   reviewComments?: string
-}): string {
+  projectName?: string
+}): Promise<string> {
   const { runId, phaseName, phaseNumber, projectDir, phaseBranch, fixInstructions, reviewComments } = opts
+  const projectName = opts.projectName || projectDir.split('/').pop() || 'unknown'
+
+  // Load matching skills so fixer has domain expertise for the code being fixed
+  const skillBlock = await buildSkillBlock(phaseName, 'fixer', projectName)
 
   return `[SWARMOPS FIXER] Phase: ${phaseName} (Phase ${phaseNumber})
 Run ID: ${runId}
 
 ## Your Role
 You are fixing issues identified in code review.
-
+${skillBlock}
 ## Review Feedback
 ${reviewComments ? `### Comments\n${reviewComments}\n` : ''}
 ### Required Fixes
@@ -411,8 +424,9 @@ export async function spawnFixer(opts: {
   phaseBranch: string
   fixInstructions: string
   reviewComments?: string
+  projectName?: string
 }): Promise<SpawnReviewResult> {
-  const fixerPrompt = buildFixerPrompt(opts)
+  const fixerPrompt = await buildFixerPrompt(opts)
   const label = `fixer:${opts.phaseName}:phase-${opts.phaseNumber}`
 
   try {
@@ -442,7 +456,7 @@ export async function spawnPhaseReviewer(
   request: PhaseReviewRequest
 ): Promise<SpawnReviewResult> {
   const roleConfig = await getRoleConfig('reviewer')
-  const reviewPrompt = buildReviewPrompt({
+  const reviewPrompt = await buildReviewPrompt({
     ...request,
     roleConfig,
     projectName: request.projectDir.split('/').pop() || 'unknown',
