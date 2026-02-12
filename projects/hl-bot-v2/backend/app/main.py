@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.api.routes import data, backtest, sync
+from app.api.routes import data, backtest, sync, strategies
 from app.config import settings
 
 
@@ -69,6 +69,7 @@ app.add_middleware(APIKeyAuthMiddleware)
 app.include_router(data.router)
 app.include_router(backtest.router)
 app.include_router(sync.router)
+app.include_router(strategies.router)
 
 
 @app.get("/")

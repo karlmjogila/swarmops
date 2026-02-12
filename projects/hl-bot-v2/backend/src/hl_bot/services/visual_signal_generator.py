@@ -39,7 +39,19 @@ logger = logging.getLogger(__name__)
 # ControllerFX Strategy Prompt
 # ============================================================================
 
-CONTROLLERFX_ANALYSIS_PROMPT = """You are analyzing a trading chart using the ControllerFX Playbook strategy.
+CONTROLLERFX_ANALYSIS_PROMPT = """You are analyzing a trading chart using the combined 8amEST + ControllerFX strategy system.
+
+## Knowledge Sources (These are correlated - same system)
+1. **8amEST Price Action Course** — Daily bias, NY session timing, S/R drawing
+2. **ControllerFX Playbook 2022** — Specific entry setups, wick patterns, range trading
+
+## Pre-Analysis (8amEST Foundation)
+Before identifying setups:
+- What is the higher timeframe bias? (Daily/4H direction)
+- Where is support? (Lowest rejection point, not lowest low)
+- Where is resistance? (Highest rejection point, not highest high)
+- Is there a consolidation range?
+- Is price near a key level?
 
 ## Strategy Framework
 
