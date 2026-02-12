@@ -21,6 +21,7 @@ from typing import AsyncGenerator, Dict, List, Optional, Callable
 from pydantic import BaseModel, Field
 
 from src.hl_bot.types import Signal, SignalType, Trade, TradeStatus
+from src.hl_bot.services.trade_outcome_learner import TradeOutcomeLearner
 from src.hl_bot.trading.position import (
     Fill,
     Position,
@@ -238,6 +239,7 @@ class BacktestEngine:
         config: BacktestConfig,
         signal_generator: Optional[Callable] = None,
         audit_dir: Optional[Path] = None,
+        enable_learning: bool = True,
     ):
         """Initialize backtest engine.
         
@@ -245,9 +247,18 @@ class BacktestEngine:
             config: Backtest configuration
             signal_generator: Function to generate signals from candle data
             audit_dir: Directory for audit logs (optional)
+            enable_learning: Whether to learn from trade outcomes
         """
         self.config = config
         self.signal_generator = signal_generator
+        self.enable_learning = enable_learning
+        
+        # Trade outcome learner - learns from every trade
+        self.learner = TradeOutcomeLearner() if enable_learning else None
+        
+        # Store recent candles for chart generation
+        self._recent_candles: List[Candle] = []
+        self._max_candles_stored = 100
         
         # Initialize components
         self.position_tracker = PositionTracker()
@@ -433,6 +444,11 @@ class BacktestEngine:
         4. Update position prices
         5. Update equity curve
         """
+        # Store candle for chart generation (learning)
+        self._recent_candles.append(candle)
+        if len(self._recent_candles) > self._max_candles_stored:
+            self._recent_candles = self._recent_candles[-self._max_candles_stored:]
+        
         # Update position prices
         self.position_tracker.update_prices({candle.symbol: Decimal(str(candle.close))})
         
@@ -826,6 +842,10 @@ class BacktestEngine:
                     "pnl_percent": float(trade.realized_pnl_percent),
                     "reason": exit_reason,
                 })
+            
+            # Learn from trade outcome
+            if self.enable_learning and self.learner:
+                await self._learn_from_trade(trade)
     
     async def _check_exits(self, candle: Candle) -> None:
         """Check if any trades should be exited.
@@ -963,6 +983,10 @@ class BacktestEngine:
                 
                 self.closed_trades.append(trade)
                 del self.trades[trade.id]
+                
+                # Learn from trade outcome
+                if self.enable_learning and self.learner:
+                    await self._learn_from_trade(trade)
     
     def pause(self) -> None:
         """Pause backtest execution."""
@@ -1008,6 +1032,148 @@ class BacktestEngine:
         if candle_index < 0:
             raise ValueError("Candle index must be non-negative")
         self._seek_to_index = candle_index
+    
+    async def _learn_from_trade(self, trade: BacktestTrade) -> None:
+        """Learn from a closed trade by analyzing the chart.
+        
+        Args:
+            trade: The closed trade to learn from
+        """
+        if not self.learner or not self._recent_candles:
+            return
+        
+        try:
+            # Generate chart image from recent candles
+            chart_image = await self._render_trade_chart(trade)
+            
+            if chart_image:
+                # Create a Trade object for the learner
+                from src.hl_bot.types import Trade as TradeType
+                
+                trade_obj = TradeType(
+                    id=trade.id,
+                    signal_id=trade.signal_id,
+                    symbol=trade.symbol,
+                    side=trade.side,
+                    entry_price=float(trade.entry_price),
+                    entry_time=trade.entry_time,
+                    exit_price=float(trade.exit_price) if trade.exit_price else 0,
+                    exit_time=trade.exit_time,
+                    stop_loss=float(trade.stop_loss),
+                    take_profit_1=float(trade.take_profit_1),
+                    realized_pnl=trade.realized_pnl,
+                    realized_pnl_percent=trade.realized_pnl_percent,
+                    status=trade.status,
+                )
+                
+                # Add setup_type attribute if available
+                if hasattr(trade, 'setup_type'):
+                    trade_obj.setup_type = trade.setup_type
+                
+                # Analyze the trade outcome
+                analysis = await self.learner.analyze_trade_outcome(
+                    trade=trade_obj,
+                    chart_image=chart_image,
+                    strategy_context="8amEST + ControllerFX methodology",
+                )
+                
+                # Log the learning
+                logger.info(
+                    f"Learned from trade {trade.id}: {analysis.outcome} | "
+                    f"Lesson: {analysis.lesson[:50]}..."
+                )
+        except Exception as e:
+            logger.warning(f"Failed to learn from trade {trade.id}: {e}")
+    
+    async def _render_trade_chart(self, trade: BacktestTrade) -> Optional[bytes]:
+        """Render chart image for trade analysis.
+        
+        Args:
+            trade: Trade to render chart for
+            
+        Returns:
+            PNG image bytes or None if rendering fails
+        """
+        if len(self._recent_candles) < 20:
+            return None
+        
+        try:
+            import io
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+            import matplotlib.patches as patches
+            from matplotlib.dates import DateFormatter
+            
+            # Prepare data
+            candles = self._recent_candles[-50:]  # Last 50 candles
+            
+            fig, ax = plt.subplots(figsize=(12, 6))
+            
+            # Plot candlesticks
+            for i, c in enumerate(candles):
+                color = 'green' if c.close >= c.open else 'red'
+                
+                # Body
+                body_bottom = min(c.open, c.close)
+                body_height = abs(c.close - c.open)
+                ax.add_patch(patches.Rectangle(
+                    (i - 0.3, body_bottom), 0.6, body_height,
+                    facecolor=color, edgecolor=color
+                ))
+                
+                # Wicks
+                ax.plot([i, i], [c.low, body_bottom], color=color, linewidth=1)
+                ax.plot([i, i], [body_bottom + body_height, c.high], color=color, linewidth=1)
+            
+            # Mark entry and exit
+            entry_price = float(trade.entry_price)
+            exit_price = float(trade.exit_price) if trade.exit_price else entry_price
+            
+            ax.axhline(y=entry_price, color='blue', linestyle='--', label=f'Entry: {entry_price:.2f}')
+            ax.axhline(y=exit_price, color='purple', linestyle='--', label=f'Exit: {exit_price:.2f}')
+            ax.axhline(y=float(trade.stop_loss), color='red', linestyle=':', label=f'SL: {float(trade.stop_loss):.2f}')
+            ax.axhline(y=float(trade.take_profit_1), color='green', linestyle=':', label=f'TP: {float(trade.take_profit_1):.2f}')
+            
+            # Styling
+            ax.set_title(f'{trade.symbol} - {trade.side.value.upper()} Trade')
+            ax.legend(loc='upper left')
+            ax.grid(True, alpha=0.3)
+            
+            # Save to bytes
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
+            plt.close(fig)
+            buf.seek(0)
+            
+            return buf.read()
+        except Exception as e:
+            logger.warning(f"Chart rendering failed: {e}")
+            return None
+    
+    def get_learned_knowledge(self) -> dict:
+        """Get the knowledge learned from trades.
+        
+        Returns:
+            Dictionary with learned rules, patterns stats, and lessons
+        """
+        if not self.learner:
+            return {}
+        
+        return {
+            "total_trades_analyzed": self.learner._knowledge.total_trades_analyzed,
+            "rules_learned": self.learner.get_learned_rules(),
+            "recent_lessons": self.learner.get_recent_lessons(),
+            "pattern_stats": {
+                name: {
+                    "win_rate": stats.win_rate,
+                    "total_trades": stats.total_trades,
+                    "best_conditions": stats.best_conditions,
+                    "worst_conditions": stats.worst_conditions,
+                }
+                for name, stats in self.learner._knowledge.pattern_stats.items()
+            }
+        }
     
     def get_results(self) -> BacktestMetrics:
         """Get final backtest results.
