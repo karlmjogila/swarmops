@@ -1,0 +1,160 @@
+# Environment variables - NEVER COMMIT!
+.env
+.env.*
+!.env.example
+!.env.production.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+coverage.xml
+*.cover
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+.svelte-kit/
+build/
+.output/
+.nuxt/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Data and cache
+data/
+cache/
+*.db
+*.sqlite
+*.sqlite3
+
+# Backups - Keep directory structure, ignore contents
+backups/*.dump
+backups/*.tar.gz
+backups/*.bak
+backups/*.sql
+!backups/.gitkeep
+
+# Docker
+docker-compose.override.yml
+.dockerignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Secrets and credentials
+*.pem
+*.key
+*.cert
+secrets/
+credentials/
+
+# Build artifacts
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Database
+*.db-journal
+
+# Redis
+dump.rdb
+appendonly.aof
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Profiling
+*.prof
+*.lprof
+
+# Static files
+staticfiles/
+static_collected/
+
+# Media files (unless tracked explicitly)
+media/
+
+# Documentation builds
+docs/_build/
+site/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# Local configuration
+local_settings.py
+.env.local
+.env.*.local

@@ -1,0 +1,261 @@
+{{- if .Values.backend.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-backend
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.backend.labels" . | nindent 4 }}
+  {{- with .Values.commonAnnotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if not .Values.backend.autoscaling.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "hyperliquid-bot.backend.selectorLabels" . | nindent 6 }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      annotations:
+        {{- include "hyperliquid-bot.checksumAnnotations" . | nindent 8 }}
+        {{- with .Values.backend.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "hyperliquid-bot.backend.selectorLabels" . | nindent 8 }}
+        {{- with .Values.backend.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.global.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "hyperliquid-bot.backend.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.backend.podSecurityContext | nindent 8 }}
+      {{- if .Values.backend.podAntiAffinity.enabled }}
+      affinity:
+        {{- include "hyperliquid-bot.podAntiAffinity" (dict "type" .Values.backend.podAntiAffinity.type "selectorLabels" "hyperliquid-bot.backend.selectorLabels" "context" .) | nindent 8 }}
+        {{- with .Values.backend.affinity }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- else if .Values.backend.affinity }}
+      affinity:
+        {{- toYaml .Values.backend.affinity | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.backend.initContainers }}
+      initContainers:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: backend
+          securityContext:
+            {{- toYaml .Values.backend.securityContext | nindent 12 }}
+          image: {{ include "hyperliquid-bot.backend.image" . }}
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.backend.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: environment
+            - name: LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: log-level
+            - name: DATABASE_POOL_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: database-pool-size
+            - name: DATABASE_MAX_OVERFLOW
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: database-max-overflow
+            - name: DATABASE_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: database-username
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.postgresql.secretName" . }}
+                  key: {{ include "hyperliquid-bot.postgresql.secretKey" . }}
+            - name: DATABASE_URL
+              value: {{ include "hyperliquid-bot.databaseUrl" . }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.redis.secretName" . }}
+                  key: {{ include "hyperliquid-bot.redis.secretKey" . }}
+            - name: REDIS_URL
+              value: {{ include "hyperliquid-bot.redisUrl" . }}
+            - name: ANTHROPIC_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: anthropic-api-key
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: openai-api-key
+                  optional: true
+            - name: HYPERLIQUID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: hyperliquid-private-key
+            - name: HYPERLIQUID_WALLET_ADDRESS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: hyperliquid-wallet-address
+            - name: HYPERLIQUID_TESTNET
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: hyperliquid-testnet
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: secret-key
+            - name: JWT_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "hyperliquid-bot.secretName" . }}
+                  key: jwt-secret-key
+            - name: PROMETHEUS_ENABLED
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: prometheus-enabled
+            - name: MAX_RISK_PER_TRADE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: max-risk-per-trade
+            - name: MAX_CONCURRENT_POSITIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: max-concurrent-positions
+            - name: MAX_DAILY_LOSS_PERCENT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "hyperliquid-bot.configMapName" . }}
+                  key: max-daily-loss-percent
+            {{- with .Values.backend.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.backend.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if .Values.backend.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.backend.livenessProbe.httpGet.path }}
+              port: {{ .Values.backend.livenessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.backend.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.livenessProbe.failureThreshold }}
+            successThreshold: {{ .Values.backend.livenessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.backend.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.backend.readinessProbe.httpGet.path }}
+              port: {{ .Values.backend.readinessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.backend.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.readinessProbe.failureThreshold }}
+            successThreshold: {{ .Values.backend.readinessProbe.successThreshold }}
+          {{- end }}
+          {{- if .Values.backend.startupProbe.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.backend.startupProbe.httpGet.path }}
+              port: {{ .Values.backend.startupProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.backend.startupProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.backend.startupProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.backend.startupProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.backend.startupProbe.failureThreshold }}
+            successThreshold: {{ .Values.backend.startupProbe.successThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            {{- if .Values.backend.persistence.uploads.enabled }}
+            - name: uploads
+              mountPath: /app/uploads
+            {{- end }}
+            {{- if .Values.backend.persistence.temp.enabled }}
+            - name: temp
+              mountPath: /app/temp
+            {{- end }}
+            {{- if .Values.backend.persistence.logs.enabled }}
+            - name: logs
+              mountPath: /app/logs
+            {{- end }}
+            {{- with .Values.backend.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+        {{- with .Values.backend.sidecars }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if .Values.backend.persistence.uploads.enabled }}
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: {{ include "hyperliquid-bot.fullname" . }}-uploads
+        {{- end }}
+        {{- if .Values.backend.persistence.temp.enabled }}
+        - name: temp
+          persistentVolumeClaim:
+            claimName: {{ include "hyperliquid-bot.fullname" . }}-temp
+        {{- end }}
+        {{- if .Values.backend.persistence.logs.enabled }}
+        - name: logs
+          persistentVolumeClaim:
+            claimName: {{ include "hyperliquid-bot.fullname" . }}-logs
+        {{- end }}
+        {{- with .Values.backend.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

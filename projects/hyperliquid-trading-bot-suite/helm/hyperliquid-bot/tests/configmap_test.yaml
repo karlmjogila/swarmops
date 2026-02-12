@@ -1,0 +1,87 @@
+suite: configmap tests
+templates:
+  - configmap.yaml
+tests:
+  - it: should create configmap
+    asserts:
+      - isKind:
+          of: ConfigMap
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hyperliquid-bot
+
+  - it: should set environment
+    set:
+      config.environment: production
+    asserts:
+      - equal:
+          path: data.environment
+          value: "production"
+
+  - it: should set log level
+    set:
+      config.logLevel: DEBUG
+    asserts:
+      - equal:
+          path: data["log-level"]
+          value: "DEBUG"
+
+  - it: should set database pool configuration
+    set:
+      config.databasePoolSize: 50
+      config.databaseMaxOverflow: 100
+    asserts:
+      - equal:
+          path: data["database-pool-size"]
+          value: "50"
+      - equal:
+          path: data["database-max-overflow"]
+          value: "100"
+
+  - it: should set prometheus configuration
+    set:
+      config.prometheusEnabled: true
+    asserts:
+      - equal:
+          path: data["prometheus-enabled"]
+          value: "true"
+
+  - it: should set trading configuration
+    set:
+      config.trading.maxRiskPerTrade: "0.02"
+      config.trading.maxConcurrentPositions: "5"
+      config.trading.maxDailyLossPercent: "0.05"
+      config.trading.testnet: "false"
+    asserts:
+      - equal:
+          path: data["max-risk-per-trade"]
+          value: "0.02"
+      - equal:
+          path: data["max-concurrent-positions"]
+          value: "5"
+      - equal:
+          path: data["max-daily-loss-percent"]
+          value: "0.05"
+      - equal:
+          path: data["hyperliquid-testnet"]
+          value: "false"
+
+  - it: should set frontend configuration
+    set:
+      config.frontend.apiBaseUrl: "https://api.trading.example.com"
+      config.frontend.wsUrl: "wss://ws.trading.example.com"
+    asserts:
+      - equal:
+          path: data["frontend-api-base-url"]
+          value: "https://api.trading.example.com"
+      - equal:
+          path: data["frontend-ws-url"]
+          value: "wss://ws.trading.example.com"
+
+  - it: should have correct labels
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/name: hyperliquid-bot
+            app.kubernetes.io/instance: RELEASE-NAME

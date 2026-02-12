@@ -1,0 +1,211 @@
+# Development Docker Compose Configuration
+# For production, use: docker-compose -f docker-compose.prod.yml up
+
+services:
+  # PostgreSQL with TimescaleDB
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: hlbot-postgres
+    environment:
+      POSTGRES_USER: hlbot
+      POSTGRES_PASSWORD: hlbot_dev_pass
+      POSTGRES_DB: hlbot
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - hlbot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hlbot -d hlbot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Redis for caching and Celery
+  redis:
+    image: redis:7.2-alpine
+    container_name: hlbot-redis
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - hlbot-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # FastAPI Backend (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: hlbot-backend
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://hlbot:hlbot_dev_pass@postgres:5432/hlbot
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: hlbot
+      DB_USER: hlbot
+      DB_PASSWORD: hlbot_dev_pass
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: DEBUG
+    ports:
+      - "100.109.39.91:8000:8000"
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./backend:/app:delegated
+      - backend_data:/app/data
+      - backend_logs:/app/logs
+      - /app/.pytest_cache
+      - /app/__pycache__
+    networks:
+      - hlbot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Celery Worker for background tasks
+  celery-worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: hlbot-celery-worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://hlbot:hlbot_dev_pass@postgres:5432/hlbot
+      REDIS_URL: redis://redis:6379/0
+      PYTHONUNBUFFERED: 1
+      LOG_LEVEL: INFO
+    volumes:
+      - ./backend:/app:delegated
+      - backend_data:/app/data
+      - backend_logs:/app/logs
+      - /tmp/hl_bot_youtube:/tmp/hl_bot_youtube
+      - /tmp/hl_bot_pdf:/tmp/hl_bot_pdf
+    networks:
+      - hlbot-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=2 -Q default,youtube,pdf,llm
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # Celery Beat (Scheduler)
+  celery-beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    container_name: hlbot-celery-beat
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://hlbot:hlbot_dev_pass@postgres:5432/hlbot
+      REDIS_URL: redis://redis:6379/0
+      PYTHONUNBUFFERED: 1
+    volumes:
+      - ./backend:/app:delegated
+      - backend_logs:/app/logs
+    networks:
+      - hlbot-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: celery -A app.celery_app beat --loglevel=info
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # SvelteKit Frontend (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: hlbot-frontend
+    environment:
+      PUBLIC_API_URL: http://100.109.39.91:8000
+      PUBLIC_WS_URL: ws://100.109.39.91:8000
+      NODE_ENV: development
+    ports:
+      - "100.109.39.91:3001:3000"
+      - "127.0.0.1:3001:3000"
+    volumes:
+      - ./frontend:/app:delegated
+      - /app/node_modules
+      - /app/.svelte-kit
+    networks:
+      - hlbot-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+    name: hlbot_postgres_data
+  redis_data:
+    name: hlbot_redis_data
+  backend_data:
+    name: hlbot_backend_data
+  backend_logs:
+    name: hlbot_backend_logs
+
+networks:
+  hlbot-network:
+    name: hlbot-network
+    driver: bridge

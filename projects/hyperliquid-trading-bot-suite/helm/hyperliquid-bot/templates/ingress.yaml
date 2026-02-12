@@ -1,0 +1,76 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.labels" . | nindent 4 }}
+  {{- with .Values.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- end }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+    {{- with .Values.ingress.extraTls }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          # API routes - backend
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hyperliquid-bot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # WebSocket routes - backend
+          - path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hyperliquid-bot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # Health check route - backend
+          - path: /health
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hyperliquid-bot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          # Metrics route - backend
+          - path: /metrics
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hyperliquid-bot.fullname" . }}-backend
+                port:
+                  number: {{ .Values.backend.service.port }}
+          {{- with .Values.ingress.extraPaths }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          # Default catch-all - frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "hyperliquid-bot.fullname" . }}-frontend
+                port:
+                  number: {{ .Values.frontend.service.port }}
+    {{- with .Values.ingress.extraHosts }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,85 @@
+suite: pod disruption budget tests
+templates:
+  - pdb.yaml
+tests:
+  - it: should render backend PDB when enabled
+    set:
+      backend.enabled: true
+      podDisruptionBudget.backend.enabled: true
+    documentIndex: 0
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hyperliquid-bot-backend
+
+  - it: should render frontend PDB when enabled
+    set:
+      frontend.enabled: true
+      podDisruptionBudget.frontend.enabled: true
+    documentIndex: 1
+    asserts:
+      - isKind:
+          of: PodDisruptionBudget
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hyperliquid-bot-frontend
+
+  - it: should set minAvailable for backend
+    set:
+      backend.enabled: true
+      podDisruptionBudget.backend.enabled: true
+      podDisruptionBudget.backend.minAvailable: 2
+    documentIndex: 0
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 2
+
+  - it: should set minAvailable for frontend
+    set:
+      frontend.enabled: true
+      podDisruptionBudget.frontend.enabled: true
+      podDisruptionBudget.frontend.minAvailable: 1
+    documentIndex: 1
+    asserts:
+      - equal:
+          path: spec.minAvailable
+          value: 1
+
+  - it: should have correct selector for backend
+    set:
+      backend.enabled: true
+      podDisruptionBudget.backend.enabled: true
+    documentIndex: 0
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/name: hyperliquid-bot
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/component: backend
+
+  - it: should have correct selector for frontend
+    set:
+      frontend.enabled: true
+      podDisruptionBudget.frontend.enabled: true
+    documentIndex: 1
+    asserts:
+      - isSubset:
+          path: spec.selector.matchLabels
+          content:
+            app.kubernetes.io/name: hyperliquid-bot
+            app.kubernetes.io/instance: RELEASE-NAME
+            app.kubernetes.io/component: frontend
+
+  - it: should not render when disabled
+    set:
+      backend.enabled: true
+      podDisruptionBudget.backend.enabled: false
+      frontend.enabled: true
+      podDisruptionBudget.frontend.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0

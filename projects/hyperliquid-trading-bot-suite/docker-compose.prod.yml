@@ -1,0 +1,415 @@
+# Production Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  # PostgreSQL Database with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: trading_bot_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-trading_bot}
+      POSTGRES_USER: ${POSTGRES_USER:-trading_bot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "127.0.0.1:5432:5432"  # Only bind to localhost
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/sql/init:/docker-entrypoint-initdb.d:ro
+      - ./config/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-trading_bot} -d ${POSTGRES_DB:-trading_bot}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - trading_internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+        labels: "service,environment"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run/postgresql
+    command: >
+      postgres
+      -c shared_buffers=1GB
+      -c effective_cache_size=3GB
+      -c maintenance_work_mem=256MB
+      -c work_mem=16MB
+      -c max_connections=200
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c random_page_cost=1.1
+      -c log_statement=mod
+      -c log_min_duration_statement=1000
+      -c log_connections=on
+      -c log_disconnections=on
+      -c ssl=off
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: trading_bot_redis
+    ports:
+      - "127.0.0.1:6379:6379"  # Only bind to localhost
+    volumes:
+      - redis_data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - trading_internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+      --appendonly yes
+      --maxmemory 1500mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --tcp-backlog 511
+      --timeout 0
+      --tcp-keepalive 300
+
+  # Backend API Server
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+    image: trading-bot-backend:${IMAGE_TAG:-latest}
+    container_name: trading_bot_backend
+    environment:
+      - ENVIRONMENT=production
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-trading_bot}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-trading_bot}
+      - DATABASE_POOL_SIZE=20
+      - DATABASE_MAX_OVERFLOW=40
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:?ANTHROPIC_API_KEY is required}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - HYPERLIQUID_PRIVATE_KEY=${HYPERLIQUID_PRIVATE_KEY:?HYPERLIQUID_PRIVATE_KEY is required}
+      - HYPERLIQUID_WALLET_ADDRESS=${HYPERLIQUID_WALLET_ADDRESS:?HYPERLIQUID_WALLET_ADDRESS is required}
+      - HYPERLIQUID_TESTNET=${HYPERLIQUID_TESTNET:-true}
+      - SECRET_KEY=${SECRET_KEY:?SECRET_KEY is required}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - PROMETHEUS_ENABLED=true
+      - MAX_RISK_PER_TRADE=${MAX_RISK_PER_TRADE:-0.01}
+      - MAX_CONCURRENT_POSITIONS=${MAX_CONCURRENT_POSITIONS:-3}
+      - MAX_DAILY_LOSS_PERCENT=${MAX_DAILY_LOSS_PERCENT:-0.03}
+    expose:
+      - "8000"
+    volumes:
+      - uploads_data:/app/uploads
+      - temp_data:/app/temp
+      - logs_data:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - trading_internal
+      - trading_external
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+        labels: "service,environment"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    command: >
+      gunicorn src.api.main:app
+      --workers 4
+      --worker-class uvicorn.workers.UvicornWorker
+      --bind 0.0.0.0:8000
+      --timeout 120
+      --graceful-timeout 30
+      --keep-alive 5
+      --max-requests 10000
+      --max-requests-jitter 1000
+      --access-logfile -
+      --error-logfile -
+      --capture-output
+      --enable-stdio-inheritance
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        - BUILDKIT_INLINE_CACHE=1
+        - NUXT_PUBLIC_API_BASE_URL=${NUXT_PUBLIC_API_BASE_URL:-/api}
+        - NUXT_PUBLIC_WS_URL=${NUXT_PUBLIC_WS_URL:-/ws}
+    image: trading-bot-frontend:${IMAGE_TAG:-latest}
+    container_name: trading_bot_frontend
+    expose:
+      - "3000"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - trading_external
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: trading_bot_nginx
+    ports:
+      - "127.0.0.1:80:80"
+      - "127.0.0.1:443:443"
+    volumes:
+      - ./config/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./config/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - trading_external
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+
+  # Prometheus Metrics
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: trading_bot_prometheus
+    volumes:
+      - ./config/prometheus:/etc/prometheus:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    expose:
+      - "9090"
+    networks:
+      - trading_internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 2G
+        reservations:
+          cpus: '0.25'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - monitoring
+
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: trading_bot_grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?GRAFANA_ADMIN_PASSWORD is required}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=${GRAFANA_ROOT_URL:-http://localhost:3001}
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    expose:
+      - "3000"
+    networks:
+      - trading_internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.1'
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - monitoring
+
+  # Database backup service
+  backup:
+    image: prodrigestivill/postgres-backup-local:15
+    container_name: trading_bot_backup
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_DB=${POSTGRES_DB:-trading_bot}
+      - POSTGRES_USER=${POSTGRES_USER:-trading_bot}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - SCHEDULE=@daily
+      - BACKUP_KEEP_DAYS=7
+      - BACKUP_KEEP_WEEKS=4
+      - BACKUP_KEEP_MONTHS=6
+      - HEALTHCHECK_PORT=8080
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - trading_internal
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "2"
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - backup
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  uploads_data:
+    driver: local
+  temp_data:
+    driver: local
+  logs_data:
+    driver: local
+  nginx_cache:
+    driver: local
+  certbot_www:
+    driver: local
+  certbot_conf:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  trading_internal:
+    driver: bridge
+    internal: true  # No external access
+  trading_external:
+    driver: bridge

@@ -1,0 +1,169 @@
+/* Main CSS file for Hyperliquid Trading Bot Suite */
+
+:root {
+  /* Named colors that tell a story */
+  --color-surface: hsl(220, 20%, 97%);
+  --color-surface-elevated: hsl(0, 0%, 100%);
+  --color-accent: hsl(250, 75%, 60%);
+  --color-accent-glow: hsl(250, 75%, 60%, 0.15);
+  --color-text-primary: hsl(220, 25%, 12%);
+  --color-text-secondary: hsl(220, 15%, 45%);
+
+  /* Spacing scale */
+  --space-xs: 0.5rem;
+  --space-sm: 1rem;
+  --space-md: 2rem;
+  --space-lg: 4rem;
+  --space-xl: 8rem;
+  --space-2xl: 12rem;
+
+  /* Typography */
+  --font-display: 'Playfair Display', serif;
+  --font-body: 'Sora', sans-serif;
+
+  /* Shadows that feel real */
+  --shadow-sm: 0 1px 2px hsl(220 20% 20% / 0.04), 0 1px 3px hsl(220 20% 20% / 0.06);
+  --shadow-md: 0 4px 6px hsl(220 20% 20% / 0.04), 0 8px 20px hsl(220 20% 20% / 0.06);
+  --shadow-lg: 0 8px 16px hsl(220 20% 20% / 0.04), 0 20px 50px hsl(220 20% 20% / 0.08);
+  --shadow-glow: 0 0 30px var(--color-accent-glow);
+}
+
+/* Dark mode variables */
+[data-theme="dark"] {
+  --color-surface: hsl(220, 20%, 8%);
+  --color-surface-elevated: hsl(220, 15%, 12%);
+  --color-accent: hsl(250, 75%, 65%);
+  --color-accent-glow: hsl(250, 75%, 65%, 0.2);
+  --color-text-primary: hsl(220, 15%, 92%);
+  --color-text-secondary: hsl(220, 10%, 65%);
+}
+
+/* Smooth scroll for the whole page */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Beautiful text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-family: var(--font-body);
+  background-color: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+/* Display font for headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* Reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.7s cubic-bezier(0.16,1,0.3,1), transform 0.7s cubic-bezier(0.16,1,0.3,1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Card styles */
+.card {
+  border: 1px solid hsl(250 60% 70% / 0.2);
+  box-shadow: var(--shadow-md), inset 0 1px 0 hsl(0 0% 100% / 0.5);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  background: var(--color-surface-elevated);
+  border-radius: 12px;
+}
+
+.card:hover {
+  border-color: hsl(250 60% 70% / 0.4);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+/* Button styles */
+.btn-primary {
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+/* Trading-specific styles */
+.pnl-positive {
+  color: #10b981;
+}
+
+.pnl-negative {
+  color: #ef4444;
+}
+
+.signal-long {
+  color: #10b981;
+  background: hsl(142, 76%, 36%, 0.1);
+}
+
+.signal-short {
+  color: #ef4444;
+  background: hsl(0, 84%, 60%, 0.1);
+}
+
+/* Loading animations */
+.loading-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .5;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(220, 15%, 75%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(220, 15%, 65%);
+}
+
+/* Chart container */
+.chart-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--color-surface-elevated);
+  border-radius: 12px;
+  overflow: hidden;
+}

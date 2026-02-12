@@ -1,0 +1,118 @@
+====================================================================
+ Hyperliquid Trading Bot Suite has been deployed!
+====================================================================
+
+Release: {{ .Release.Name }}
+Namespace: {{ include "hyperliquid-bot.namespace" . }}
+Chart Version: {{ .Chart.Version }}
+App Version: {{ .Chart.AppVersion }}
+
+====================================================================
+ Components
+====================================================================
+
+{{- if .Values.backend.enabled }}
+✓ Backend API: {{ include "hyperliquid-bot.fullname" . }}-backend
+  - Service: {{ include "hyperliquid-bot.fullname" . }}-backend:{{ .Values.backend.service.port }}
+  - Replicas: {{ if .Values.backend.autoscaling.enabled }}{{ .Values.backend.autoscaling.minReplicas }}-{{ .Values.backend.autoscaling.maxReplicas }} (HPA enabled){{ else }}{{ .Values.backend.replicaCount }}{{ end }}
+{{- end }}
+
+{{- if .Values.frontend.enabled }}
+✓ Frontend Dashboard: {{ include "hyperliquid-bot.fullname" . }}-frontend
+  - Service: {{ include "hyperliquid-bot.fullname" . }}-frontend:{{ .Values.frontend.service.port }}
+  - Replicas: {{ if .Values.frontend.autoscaling.enabled }}{{ .Values.frontend.autoscaling.minReplicas }}-{{ .Values.frontend.autoscaling.maxReplicas }} (HPA enabled){{ else }}{{ .Values.frontend.replicaCount }}{{ end }}
+{{- end }}
+
+{{- if .Values.postgresql.enabled }}
+✓ PostgreSQL: {{ .Release.Name }}-postgresql
+  - Internal endpoint: {{ .Release.Name }}-postgresql:5432
+  - Database: {{ .Values.postgresql.auth.database }}
+{{- end }}
+
+{{- if .Values.redis.enabled }}
+✓ Redis: {{ .Release.Name }}-redis-master
+  - Internal endpoint: {{ .Release.Name }}-redis-master:6379
+{{- end }}
+
+====================================================================
+ Access
+====================================================================
+
+{{- if .Values.ingress.enabled }}
+{{- if .Values.ingress.tls.enabled }}
+  HTTPS: https://{{ .Values.ingress.host }}
+{{- else }}
+  HTTP: http://{{ .Values.ingress.host }}
+{{- end }}
+
+API endpoints:
+  - REST API: https://{{ .Values.ingress.host }}/api
+  - WebSocket: wss://{{ .Values.ingress.host }}/ws
+  - Health: https://{{ .Values.ingress.host }}/health
+  - Metrics: https://{{ .Values.ingress.host }}/metrics
+
+{{- else }}
+Ingress is disabled. To access the services, use port-forwarding:
+
+  # Frontend Dashboard
+  kubectl port-forward svc/{{ include "hyperliquid-bot.fullname" . }}-frontend 3000:{{ .Values.frontend.service.port }} -n {{ include "hyperliquid-bot.namespace" . }}
+
+  # Backend API
+  kubectl port-forward svc/{{ include "hyperliquid-bot.fullname" . }}-backend 8000:{{ .Values.backend.service.port }} -n {{ include "hyperliquid-bot.namespace" . }}
+
+{{- end }}
+
+====================================================================
+ Post-Installation Steps
+====================================================================
+
+1. Verify all pods are running:
+   kubectl get pods -n {{ include "hyperliquid-bot.namespace" . }} -l "app.kubernetes.io/instance={{ .Release.Name }}"
+
+2. Check pod logs:
+   kubectl logs -n {{ include "hyperliquid-bot.namespace" . }} -l "app.kubernetes.io/instance={{ .Release.Name }},app.kubernetes.io/component=backend"
+
+3. Verify database connection:
+   kubectl exec -it {{ .Release.Name }}-postgresql-0 -n {{ include "hyperliquid-bot.namespace" . }} -- psql -U {{ .Values.postgresql.auth.username }} -d {{ .Values.postgresql.auth.database }} -c "\dt"
+
+{{- if .Values.secrets.create }}
+
+====================================================================
+ ⚠️  SECURITY WARNING
+====================================================================
+
+Secrets are stored in the Kubernetes Secret object. For production:
+- Use external secrets management (Vault, AWS Secrets Manager, etc.)
+- Set `secrets.create: false` and `externalSecrets.enabled: true`
+- Never commit secrets to version control
+
+{{- end }}
+
+====================================================================
+ Useful Commands
+====================================================================
+
+# Watch deployment status
+kubectl rollout status deployment/{{ include "hyperliquid-bot.fullname" . }}-backend -n {{ include "hyperliquid-bot.namespace" . }}
+
+# View HPA status
+kubectl get hpa -n {{ include "hyperliquid-bot.namespace" . }}
+
+# Scale manually (if HPA disabled)
+kubectl scale deployment/{{ include "hyperliquid-bot.fullname" . }}-backend --replicas=3 -n {{ include "hyperliquid-bot.namespace" . }}
+
+# View events
+kubectl get events -n {{ include "hyperliquid-bot.namespace" . }} --sort-by='.lastTimestamp'
+
+# Run database migrations (if needed)
+kubectl exec -it deployment/{{ include "hyperliquid-bot.fullname" . }}-backend -n {{ include "hyperliquid-bot.namespace" . }} -- python -m alembic upgrade head
+
+====================================================================
+ Documentation
+====================================================================
+
+For more information, visit:
+- Project Repository: https://github.com/your-org/hyperliquid-trading-bot-suite
+- Helm Chart Documentation: ./README.md
+
+Thank you for using Hyperliquid Trading Bot Suite!

@@ -1,0 +1,39 @@
+{{- if and .Values.backend.enabled .Values.podDisruptionBudget.backend.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-backend
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.backend.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.podDisruptionBudget.backend.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.backend.minAvailable }}
+  {{- end }}
+  {{- if .Values.podDisruptionBudget.backend.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.backend.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "hyperliquid-bot.backend.selectorLabels" . | nindent 6 }}
+{{- end }}
+---
+{{- if and .Values.frontend.enabled .Values.podDisruptionBudget.frontend.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-frontend
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.frontend.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.podDisruptionBudget.frontend.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.frontend.minAvailable }}
+  {{- end }}
+  {{- if .Values.podDisruptionBudget.frontend.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.frontend.maxUnavailable }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "hyperliquid-bot.frontend.selectorLabels" . | nindent 6 }}
+{{- end }}

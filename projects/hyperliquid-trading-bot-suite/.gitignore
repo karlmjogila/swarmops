@@ -1,0 +1,179 @@
+# Operating System
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Environment and secrets
+.env
+.env.local
+.env.production
+.env.test
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyc
+*.pyo
+
+# Virtual environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Testing and coverage
+.coverage
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Frontend builds
+.nuxt/
+.output/
+.next/
+dist/
+out/
+
+# IDE and editors
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+.atom/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# MacOS
+.DS_Store?
+Icon?
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Trading and financial data
+data/
+backtest_results/
+historical_data/
+*.csv
+*.parquet
+
+# AI model files
+models/
+*.pkl
+*.joblib
+*.model
+
+# Video and image processing
+uploads/
+processed_videos/
+extracted_frames/
+*.mp4
+*.avi
+*.mov
+*.webm
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.pdf
+
+# Secrets and keys
+private_keys/
+wallets/
+*.pem
+*.key
+secrets.json
+
+# Runtime files
+*.pid
+.celerybeat-schedule
+
+# Backup files
+*.bak
+*.backup
+
+# Documentation builds
+docs/_build/
+site/
+
+# Alembic
+# (but keep the alembic.ini and versions/ folder)
+# alembic.ini should be committed but may contain secrets in production
+
+# Local configuration
+local_config.py
+local_settings.py
+
+# SwarmOps specific
+state.json
+activity.jsonl

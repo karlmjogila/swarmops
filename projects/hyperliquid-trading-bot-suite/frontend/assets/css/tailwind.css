@@ -1,0 +1,6 @@
+/* Import our beautiful design system */
+@import './main.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

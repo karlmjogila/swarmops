@@ -1,0 +1,140 @@
+# Prometheus alerting rules for Trading Bot Suite
+
+groups:
+  - name: trading_bot_critical
+    rules:
+      # API Health
+      - alert: TradingBotDown
+        expr: up{job="trading-bot-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Trading bot backend is down"
+          description: "The trading bot backend has been unreachable for more than 1 minute."
+
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{job="trading-bot-backend",status=~"5.."}[5m])) /
+          sum(rate(http_requests_total{job="trading-bot-backend"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is above 5% for the last 5 minutes (current: {{ $value | humanizePercentage }})."
+
+      # Trading specific alerts
+      - alert: DailyLossLimitApproaching
+        expr: trading_daily_loss_percent > 0.025
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Daily loss limit approaching"
+          description: "Daily loss is at {{ $value | humanizePercentage }} (limit: 3%)."
+
+      - alert: DailyLossLimitReached
+        expr: trading_daily_loss_percent >= 0.03
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CRITICAL: Daily loss limit reached - trading halted"
+          description: "Daily loss limit of 3% has been reached. Trading is halted."
+
+      - alert: PositionStuck
+        expr: trading_position_duration_minutes > 1440
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Position held for over 24 hours"
+          description: "Position {{ $labels.position_id }} has been open for {{ $value }} minutes."
+
+      - alert: CircuitBreakerTripped
+        expr: trading_circuit_breaker_state == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker has tripped"
+          description: "Trading circuit breaker has been activated. Manual intervention required."
+
+  - name: trading_bot_high
+    rules:
+      # High latency
+      - alert: HighApiLatency
+        expr: |
+          histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job="trading-bot-backend"}[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile latency is above 2 seconds (current: {{ $value | humanizeDuration }})."
+
+      # Exchange connection issues
+      - alert: ExchangeConnectionFailed
+        expr: trading_exchange_connected == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Exchange connection lost"
+          description: "Connection to Hyperliquid exchange has been lost for 2 minutes."
+
+      - alert: ExchangeRateLimitHit
+        expr: increase(trading_rate_limit_hits_total[5m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Exchange rate limit being hit"
+          description: "{{ $value }} rate limit hits in the last 5 minutes."
+
+  - name: trading_bot_infrastructure
+    rules:
+      # Database issues
+      - alert: DatabaseConnectionPoolExhausted
+        expr: trading_db_pool_available < 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database connection pool running low"
+          description: "Only {{ $value }} database connections available."
+
+      # Redis issues
+      - alert: RedisConnectionLost
+        expr: trading_redis_connected == 0
+        for: 1m
+        labels:
+          severity: high
+        annotations:
+          summary: "Redis connection lost"
+          description: "Connection to Redis cache has been lost."
+
+      # Memory usage
+      - alert: HighMemoryUsage
+        expr: |
+          (container_memory_usage_bytes{name="trading_bot_backend"} / 
+           container_spec_memory_limit_bytes{name="trading_bot_backend"}) > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Backend container using {{ $value | humanizePercentage }} of memory limit."
+
+      # CPU usage
+      - alert: HighCpuUsage
+        expr: |
+          rate(container_cpu_usage_seconds_total{name="trading_bot_backend"}[5m]) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "Backend container CPU usage is at {{ $value | humanizePercentage }}."

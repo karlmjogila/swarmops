@@ -1,0 +1,131 @@
+# CI Test Values
+# These values are used for CI/CD testing
+
+backend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: trading-bot-backend
+    tag: "test"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "500m"
+      memory: 512Mi
+    requests:
+      cpu: "100m"
+      memory: 128Mi
+  autoscaling:
+    enabled: false
+  persistence:
+    uploads:
+      enabled: false
+    temp:
+      enabled: false
+    logs:
+      enabled: false
+
+frontend:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: trading-bot-frontend
+    tag: "test"
+    pullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: "200m"
+      memory: 256Mi
+    requests:
+      cpu: "50m"
+      memory: 64Mi
+  autoscaling:
+    enabled: false
+
+ingress:
+  enabled: true
+  className: nginx
+  host: test.local
+  tls:
+    enabled: false
+
+config:
+  environment: "test"
+  logLevel: "DEBUG"
+  prometheusEnabled: false
+  databasePoolSize: 5
+  databaseMaxOverflow: 10
+  trading:
+    maxRiskPerTrade: "0.01"
+    maxConcurrentPositions: "1"
+    maxDailyLossPercent: "0.01"
+    testnet: "true"
+
+secrets:
+  create: true
+  database:
+    username: "test_user"
+    password: "test_password"
+  redis:
+    password: "test_redis_password"
+  apiKeys:
+    anthropicApiKey: "test-anthropic-key"
+    openaiApiKey: "test-openai-key"
+  hyperliquid:
+    privateKey: "0xtest"
+    walletAddress: "0xtestaddress"
+  app:
+    secretKey: "test-secret-key"
+    jwtSecretKey: "test-jwt-secret"
+
+podDisruptionBudget:
+  backend:
+    enabled: false
+  frontend:
+    enabled: false
+
+networkPolicy:
+  enabled: false
+
+serviceMonitor:
+  enabled: false
+
+# Use minimal PostgreSQL for testing
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "postgres"
+    username: "test_user"
+    password: "test_password"
+    database: "test_db"
+  primary:
+    persistence:
+      enabled: false
+    resources:
+      limits:
+        cpu: "200m"
+        memory: 256Mi
+      requests:
+        cpu: "50m"
+        memory: 64Mi
+
+# Use minimal Redis for testing
+redis:
+  enabled: true
+  architecture: standalone
+  auth:
+    enabled: true
+    password: "test_redis_password"
+  master:
+    persistence:
+      enabled: false
+    resources:
+      limits:
+        cpu: "100m"
+        memory: 128Mi
+      requests:
+        cpu: "25m"
+        memory: 32Mi
+
+test:
+  enabled: true

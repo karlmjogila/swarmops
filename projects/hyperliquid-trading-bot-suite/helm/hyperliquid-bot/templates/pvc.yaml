@@ -1,0 +1,86 @@
+{{- if and .Values.backend.enabled .Values.backend.persistence.uploads.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-uploads
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.backend.labels" . | nindent 4 }}
+  {{- with .Values.backend.persistence.uploads.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.backend.persistence.uploads.accessModes | nindent 4 }}
+  {{- if .Values.backend.persistence.uploads.storageClass }}
+  {{- if eq .Values.backend.persistence.uploads.storageClass "-" }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.backend.persistence.uploads.storageClass | quote }}
+  {{- end }}
+  {{- else if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.uploads.size | quote }}
+{{- end }}
+---
+{{- if and .Values.backend.enabled .Values.backend.persistence.temp.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-temp
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.backend.labels" . | nindent 4 }}
+  {{- with .Values.backend.persistence.temp.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.backend.persistence.temp.accessModes | nindent 4 }}
+  {{- if .Values.backend.persistence.temp.storageClass }}
+  {{- if eq .Values.backend.persistence.temp.storageClass "-" }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.backend.persistence.temp.storageClass | quote }}
+  {{- end }}
+  {{- else if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.temp.size | quote }}
+{{- end }}
+---
+{{- if and .Values.backend.enabled .Values.backend.persistence.logs.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "hyperliquid-bot.fullname" . }}-logs
+  namespace: {{ include "hyperliquid-bot.namespace" . }}
+  labels:
+    {{- include "hyperliquid-bot.backend.labels" . | nindent 4 }}
+  {{- with .Values.backend.persistence.logs.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- toYaml .Values.backend.persistence.logs.accessModes | nindent 4 }}
+  {{- if .Values.backend.persistence.logs.storageClass }}
+  {{- if eq .Values.backend.persistence.logs.storageClass "-" }}
+  storageClassName: ""
+  {{- else }}
+  storageClassName: {{ .Values.backend.persistence.logs.storageClass | quote }}
+  {{- end }}
+  {{- else if .Values.global.storageClass }}
+  storageClassName: {{ .Values.global.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.backend.persistence.logs.size | quote }}
+{{- end }}

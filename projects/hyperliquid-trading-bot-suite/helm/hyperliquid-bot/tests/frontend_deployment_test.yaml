@@ -1,0 +1,118 @@
+suite: frontend deployment tests
+templates:
+  - frontend-deployment.yaml
+  - configmap.yaml
+  - secret.yaml
+tests:
+  - it: should render frontend deployment when enabled
+    set:
+      frontend.enabled: true
+    template: frontend-deployment.yaml
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hyperliquid-bot-frontend
+
+  - it: should not render when frontend is disabled
+    set:
+      frontend.enabled: false
+    template: frontend-deployment.yaml
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should use the correct image
+    set:
+      frontend.image.repository: my-registry/frontend
+      frontend.image.tag: "2.0.0"
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: my-registry/frontend:2.0.0
+
+  - it: should set correct replica count when HPA is disabled
+    set:
+      frontend.autoscaling.enabled: false
+      frontend.replicaCount: 3
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 3
+
+  - it: should set NODE_ENV to production
+    template: frontend-deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NODE_ENV
+            value: "production"
+
+  - it: should set correct resource limits
+    set:
+      frontend.resources.limits.cpu: "2"
+      frontend.resources.limits.memory: 2Gi
+      frontend.resources.requests.cpu: 500m
+      frontend.resources.requests.memory: 512Mi
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "2"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: 2Gi
+
+  - it: should apply security context for frontend
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.securityContext.runAsNonRoot
+          value: true
+      - equal:
+          path: spec.template.spec.securityContext.runAsUser
+          value: 1001
+      - equal:
+          path: spec.template.spec.containers[0].securityContext.allowPrivilegeEscalation
+          value: false
+
+  - it: should have correct component label
+    template: frontend-deployment.yaml
+    asserts:
+      - isSubset:
+          path: metadata.labels
+          content:
+            app.kubernetes.io/component: frontend
+
+  - it: should configure liveness probe
+    set:
+      frontend.livenessProbe.enabled: true
+      frontend.livenessProbe.httpGet.path: /
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].livenessProbe.httpGet.path
+          value: /
+
+  - it: should configure readiness probe
+    set:
+      frontend.readinessProbe.enabled: true
+      frontend.readinessProbe.httpGet.path: /
+    template: frontend-deployment.yaml
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].readinessProbe.httpGet.path
+          value: /
+
+  - it: should mount tmp volume
+    template: frontend-deployment.yaml
+    asserts:
+      - contains:
+          path: spec.template.spec.containers[0].volumeMounts
+          content:
+            name: tmp
+            mountPath: /tmp

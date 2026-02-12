@@ -1,0 +1,90 @@
+[tool.poetry]
+name = "hl-bot"
+version = "0.1.0"
+description = "AI-Powered Trading Research & Execution System"
+authors = ["Builder <builder@swarmops.local>"]
+readme = "README.md"
+packages = [{include = "hl_bot", from = "src"}, {include = "app"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.109.0"
+uvicorn = {version = "^0.40.0", extras = ["standard"]}
+sqlalchemy = "^2.0.25"
+alembic = "^1.13.1"
+psycopg2-binary = "^2.9.9"
+python-dotenv = "^1.0.0"
+pydantic = "^2.5.3"
+pydantic-settings = "^2.1.0"
+anthropic = "^0.79.0"
+httpx = "^0.27.0"
+websockets = "^14.1"
+mcp = "^1.26.0"
+eth-account = "^0.13.0"
+aiofiles = "^24.1.0"
+yt-dlp = "^2024.12.23"
+faster-whisper = "^1.1.0"
+pillow = "^11.0.0"
+pymupdf = "^1.24.0"
+pdfplumber = "^0.11.0"
+pytesseract = "^0.3.10"
+celery = {extras = ["redis"], version = "^5.6.2"}
+redis = "^5.0.0"
+matplotlib = "^3.8.0"
+mplfinance = "^0.12.10b0"
+pandas = "^2.1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0.2"
+pytest-asyncio = "^1.3.0"
+pytest-cov = "^7.0.0"
+ruff = "^0.15.0"
+mypy = "^1.19.1"
+reportlab = "^4.4.9"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Allow unused imports in __init__.py
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+follow_imports = "normal"
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+asyncio_mode = "auto"

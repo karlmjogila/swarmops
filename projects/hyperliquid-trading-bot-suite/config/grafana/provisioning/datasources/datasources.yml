@@ -1,0 +1,28 @@
+# Grafana datasources provisioning
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+
+  # Uncomment if using PostgreSQL datasource
+  # - name: PostgreSQL
+  #   type: postgres
+  #   url: postgres:5432
+  #   database: trading_bot
+  #   user: grafana_reader
+  #   secureJsonData:
+  #     password: ${GRAFANA_POSTGRES_PASSWORD}
+  #   jsonData:
+  #     sslmode: disable
+  #     maxOpenConns: 5
+  #     maxIdleConns: 2
+  #     connMaxLifetime: 14400

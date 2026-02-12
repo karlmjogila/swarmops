@@ -1,0 +1,100 @@
+# Production Dockerfile for Trading Bot Backend
+# Multi-stage build for optimized image size
+
+# ============================================
+# Stage 1: Builder
+# ============================================
+FROM python:3.11-slim as builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install Python dependencies
+WORKDIR /app
+COPY pyproject.toml ./
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -e .[production]
+
+# ============================================
+# Stage 2: Production
+# ============================================
+FROM python:3.11-slim as production
+
+# Metadata
+LABEL maintainer="trading-bot-team"
+LABEL version="1.0.0"
+LABEL description="Hyperliquid Trading Bot Suite - Backend API"
+
+# Environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONFAULTHANDLER=1 \
+    PYTHONPATH=/app \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH="/opt/venv/bin:$PATH" \
+    # Application defaults
+    ENVIRONMENT=production \
+    LOG_LEVEL=INFO \
+    HOST=0.0.0.0 \
+    PORT=8000
+
+# Install runtime dependencies only
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ffmpeg \
+    libpq5 \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
+
+# Copy virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+
+# Create non-root user
+RUN groupadd --gid 1000 appgroup && \
+    useradd --uid 1000 --gid appgroup --shell /bin/bash --create-home appuser
+
+# Create application directories
+WORKDIR /app
+RUN mkdir -p uploads temp logs && \
+    chown -R appuser:appgroup /app
+
+# Copy source code
+COPY --chown=appuser:appgroup src/ ./src/
+COPY --chown=appuser:appgroup alembic/ ./alembic/
+COPY --chown=appuser:appgroup alembic.ini ./
+COPY --chown=appuser:appgroup pyproject.toml ./
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/api/health || exit 1
+
+# Default command (can be overridden by docker-compose)
+CMD ["gunicorn", "src.api.main:app", \
+     "--workers", "4", \
+     "--worker-class", "uvicorn.workers.UvicornWorker", \
+     "--bind", "0.0.0.0:8000", \
+     "--timeout", "120", \
+     "--graceful-timeout", "30", \
+     "--keep-alive", "5", \
+     "--max-requests", "10000", \
+     "--max-requests-jitter", "1000", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-", \
+     "--capture-output"]

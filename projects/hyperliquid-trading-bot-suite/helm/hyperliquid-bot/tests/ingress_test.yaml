@@ -1,0 +1,147 @@
+suite: ingress tests
+templates:
+  - ingress.yaml
+tests:
+  - it: should render ingress when enabled
+    set:
+      ingress.enabled: true
+      ingress.host: trading.example.com
+    asserts:
+      - isKind:
+          of: Ingress
+      - equal:
+          path: metadata.name
+          value: RELEASE-NAME-hyperliquid-bot
+
+  - it: should not render when ingress is disabled
+    set:
+      ingress.enabled: false
+    asserts:
+      - hasDocuments:
+          count: 0
+
+  - it: should set ingress class name
+    set:
+      ingress.enabled: true
+      ingress.className: nginx
+    asserts:
+      - equal:
+          path: spec.ingressClassName
+          value: nginx
+
+  - it: should configure TLS when enabled
+    set:
+      ingress.enabled: true
+      ingress.host: trading.example.com
+      ingress.tls.enabled: true
+      ingress.tls.secretName: trading-tls-secret
+    asserts:
+      - equal:
+          path: spec.tls[0].hosts[0]
+          value: trading.example.com
+      - equal:
+          path: spec.tls[0].secretName
+          value: trading-tls-secret
+
+  - it: should not configure TLS when disabled
+    set:
+      ingress.enabled: true
+      ingress.tls.enabled: false
+    asserts:
+      - notExists:
+          path: spec.tls
+
+  - it: should set correct host
+    set:
+      ingress.enabled: true
+      ingress.host: my-trading-bot.example.com
+    asserts:
+      - equal:
+          path: spec.rules[0].host
+          value: my-trading-bot.example.com
+
+  - it: should route /api to backend
+    set:
+      ingress.enabled: true
+      backend.service.port: 8000
+    asserts:
+      - contains:
+          path: spec.rules[0].http.paths
+          content:
+            path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: RELEASE-NAME-hyperliquid-bot-backend
+                port:
+                  number: 8000
+
+  - it: should route /ws to backend for websockets
+    set:
+      ingress.enabled: true
+      backend.service.port: 8000
+    asserts:
+      - contains:
+          path: spec.rules[0].http.paths
+          content:
+            path: /ws
+            pathType: Prefix
+            backend:
+              service:
+                name: RELEASE-NAME-hyperliquid-bot-backend
+                port:
+                  number: 8000
+
+  - it: should route / to frontend
+    set:
+      ingress.enabled: true
+      frontend.service.port: 3000
+    asserts:
+      - contains:
+          path: spec.rules[0].http.paths
+          content:
+            path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: RELEASE-NAME-hyperliquid-bot-frontend
+                port:
+                  number: 3000
+
+  - it: should apply nginx annotations
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+        nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/proxy-body-size"]
+          value: "100m"
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/ssl-redirect"]
+          value: "true"
+
+  - it: should have rate limiting annotations
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/limit-rps: "100"
+        nginx.ingress.kubernetes.io/limit-connections: "50"
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/limit-rps"]
+          value: "100"
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/limit-connections"]
+          value: "50"
+
+  - it: should have websocket annotation
+    set:
+      ingress.enabled: true
+      ingress.annotations:
+        nginx.ingress.kubernetes.io/websocket-services: "hyperliquid-bot-backend"
+    asserts:
+      - equal:
+          path: metadata.annotations["nginx.ingress.kubernetes.io/websocket-services"]
+          value: "hyperliquid-bot-backend"

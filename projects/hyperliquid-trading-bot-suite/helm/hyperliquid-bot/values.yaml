@@ -1,0 +1,639 @@
+# Default values for hyperliquid-bot
+# This is a YAML-formatted file.
+
+# -- Global settings
+global:
+  # -- Image pull secrets for all deployments
+  imagePullSecrets: []
+  # -- Storage class for all PVCs
+  storageClass: ""
+
+# -- Common labels to add to all resources
+commonLabels: {}
+
+# -- Common annotations to add to all resources
+commonAnnotations: {}
+
+# -- Namespace override
+namespaceOverride: ""
+
+# =============================================================================
+# Backend Configuration
+# =============================================================================
+backend:
+  # -- Enable backend deployment
+  enabled: true
+  
+  # -- Number of replicas
+  replicaCount: 2
+  
+  image:
+    # -- Image repository
+    repository: trading-bot-backend
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+    # -- Image tag (defaults to appVersion)
+    tag: ""
+  
+  # -- Service account configuration
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  # -- Pod annotations
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "8000"
+    prometheus.io/path: "/metrics"
+  
+  # -- Pod labels
+  podLabels: {}
+  
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  
+  # -- Service configuration
+  service:
+    type: ClusterIP
+    port: 8000
+    targetPort: 8000
+    annotations: {}
+  
+  # -- Resource requests and limits
+  resources:
+    limits:
+      cpu: "4"
+      memory: 8Gi
+    requests:
+      cpu: "1"
+      memory: 2Gi
+  
+  # -- Autoscaling configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+    behavior:
+      scaleDown:
+        stabilizationWindowSeconds: 300
+        policies:
+          - type: Percent
+            value: 10
+            periodSeconds: 60
+      scaleUp:
+        stabilizationWindowSeconds: 0
+        policies:
+          - type: Percent
+            value: 100
+            periodSeconds: 15
+          - type: Pods
+            value: 4
+            periodSeconds: 15
+        selectPolicy: Max
+  
+  # -- Node selector
+  nodeSelector: {}
+  
+  # -- Tolerations
+  tolerations: []
+  
+  # -- Affinity rules
+  affinity: {}
+  
+  # -- Pod anti-affinity for HA
+  podAntiAffinity:
+    enabled: true
+    # -- Type: soft or hard
+    type: soft
+  
+  # -- Topology spread constraints
+  topologySpreadConstraints: []
+  
+  # -- Liveness probe
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+  
+  # -- Readiness probe
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  
+  # -- Startup probe
+  startupProbe:
+    enabled: true
+    httpGet:
+      path: /api/health
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    successThreshold: 1
+  
+  # -- Extra environment variables
+  extraEnv: []
+  # -- Extra environment variables from secrets/configmaps
+  extraEnvFrom: []
+  # -- Extra volume mounts
+  extraVolumeMounts: []
+  # -- Extra volumes
+  extraVolumes: []
+  
+  # -- Init containers
+  initContainers: []
+  
+  # -- Sidecar containers
+  sidecars: []
+  
+  # -- Persistence for uploads/temp
+  persistence:
+    uploads:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+      annotations: {}
+    temp:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 5Gi
+      annotations: {}
+    logs:
+      enabled: true
+      storageClass: ""
+      accessModes:
+        - ReadWriteOnce
+      size: 10Gi
+      annotations: {}
+
+# =============================================================================
+# Frontend Configuration
+# =============================================================================
+frontend:
+  # -- Enable frontend deployment
+  enabled: true
+  
+  # -- Number of replicas
+  replicaCount: 2
+  
+  image:
+    # -- Image repository
+    repository: trading-bot-frontend
+    # -- Image pull policy
+    pullPolicy: IfNotPresent
+    # -- Image tag (defaults to appVersion)
+    tag: ""
+  
+  # -- Service account configuration
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  # -- Pod annotations
+  podAnnotations: {}
+  
+  # -- Pod labels
+  podLabels: {}
+  
+  # -- Pod security context
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+    runAsGroup: 1001
+    fsGroup: 1001
+    seccompProfile:
+      type: RuntimeDefault
+  
+  # -- Container security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    capabilities:
+      drop:
+        - ALL
+  
+  # -- Service configuration
+  service:
+    type: ClusterIP
+    port: 3000
+    targetPort: 3000
+    annotations: {}
+  
+  # -- Resource requests and limits
+  resources:
+    limits:
+      cpu: "1"
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  
+  # -- Autoscaling configuration
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 6
+    targetCPUUtilizationPercentage: 70
+    targetMemoryUtilizationPercentage: 80
+  
+  # -- Node selector
+  nodeSelector: {}
+  
+  # -- Tolerations
+  tolerations: []
+  
+  # -- Affinity rules
+  affinity: {}
+  
+  # -- Pod anti-affinity for HA
+  podAntiAffinity:
+    enabled: true
+    type: soft
+  
+  # -- Liveness probe
+  livenessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 30
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+    successThreshold: 1
+  
+  # -- Readiness probe
+  readinessProbe:
+    enabled: true
+    httpGet:
+      path: /
+      port: http
+    initialDelaySeconds: 15
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    successThreshold: 1
+  
+  # -- Extra environment variables
+  extraEnv: []
+  extraEnvFrom: []
+  extraVolumeMounts: []
+  extraVolumes: []
+
+# =============================================================================
+# Ingress Configuration
+# =============================================================================
+ingress:
+  # -- Enable ingress
+  enabled: true
+  
+  # -- Ingress class name
+  className: "nginx"
+  
+  # -- Ingress annotations
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/websocket-services: "hyperliquid-bot-backend"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+    # -- Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+  
+  # -- Hostname
+  host: "trading.example.com"
+  
+  # -- TLS configuration
+  tls:
+    enabled: true
+    # -- Secret name for TLS certificate
+    secretName: "hyperliquid-bot-tls"
+  
+  # -- Extra paths for ingress
+  extraPaths: []
+  
+  # -- Additional hosts
+  extraHosts: []
+  
+  # -- Additional TLS configurations
+  extraTls: []
+
+# =============================================================================
+# ConfigMap Configuration
+# =============================================================================
+config:
+  # -- Environment setting
+  environment: "production"
+  
+  # -- Log level
+  logLevel: "INFO"
+  
+  # -- Enable Prometheus metrics
+  prometheusEnabled: true
+  
+  # -- Database pool settings
+  databasePoolSize: 20
+  databaseMaxOverflow: 40
+  
+  # -- Trading configuration
+  trading:
+    maxRiskPerTrade: "0.01"
+    maxConcurrentPositions: "3"
+    maxDailyLossPercent: "0.03"
+    testnet: "true"
+  
+  # -- Frontend configuration
+  frontend:
+    apiBaseUrl: "/api"
+    wsUrl: "/ws"
+
+# =============================================================================
+# Secrets Configuration
+# =============================================================================
+secrets:
+  # -- Create secrets (disable if using external secrets)
+  create: true
+  
+  # -- Annotations for the secret
+  annotations: {}
+  
+  # -- Database credentials
+  database:
+    # -- Database username
+    username: "trading_bot"
+    # -- Database password (use external secret in production!)
+    password: ""
+    # -- Database name
+    database: "trading_bot"
+  
+  # -- Redis credentials
+  redis:
+    # -- Redis password (use external secret in production!)
+    password: ""
+  
+  # -- API Keys (use external secrets in production!)
+  apiKeys:
+    # -- Anthropic API key
+    anthropicApiKey: ""
+    # -- OpenAI API key (optional)
+    openaiApiKey: ""
+  
+  # -- Hyperliquid credentials
+  hyperliquid:
+    # -- Private key
+    privateKey: ""
+    # -- Wallet address
+    walletAddress: ""
+  
+  # -- Application secrets
+  app:
+    # -- Secret key for encryption
+    secretKey: ""
+    # -- JWT secret key
+    jwtSecretKey: ""
+  
+  # -- External secret reference (if not creating secrets)
+  existingSecret: ""
+
+# =============================================================================
+# External Secrets Configuration (for helm-secrets or external-secrets operator)
+# =============================================================================
+externalSecrets:
+  # -- Enable external secrets integration
+  enabled: false
+  
+  # -- External secrets backend (vault, aws, gcp, azure)
+  backend: "vault"
+  
+  # -- Vault configuration
+  vault:
+    server: "https://vault.example.com"
+    path: "secret/data/hyperliquid-bot"
+    role: "hyperliquid-bot"
+  
+  # -- AWS Secrets Manager configuration
+  aws:
+    region: "us-east-1"
+    secretName: "hyperliquid-bot"
+  
+  # -- Refresh interval
+  refreshInterval: "1h"
+
+# =============================================================================
+# Pod Disruption Budget
+# =============================================================================
+podDisruptionBudget:
+  # -- Enable PDB for backend
+  backend:
+    enabled: true
+    minAvailable: 1
+    # maxUnavailable: 1
+  
+  # -- Enable PDB for frontend
+  frontend:
+    enabled: true
+    minAvailable: 1
+
+# =============================================================================
+# Network Policies
+# =============================================================================
+networkPolicy:
+  # -- Enable network policies
+  enabled: false
+  
+  # -- Ingress rules
+  ingress:
+    enabled: true
+  
+  # -- Egress rules
+  egress:
+    enabled: true
+
+# =============================================================================
+# Service Monitor (Prometheus Operator)
+# =============================================================================
+serviceMonitor:
+  # -- Enable ServiceMonitor
+  enabled: false
+  
+  # -- ServiceMonitor namespace (defaults to release namespace)
+  namespace: ""
+  
+  # -- Labels for ServiceMonitor
+  labels: {}
+  
+  # -- Scrape interval
+  interval: "30s"
+  
+  # -- Scrape timeout
+  scrapeTimeout: "10s"
+
+# =============================================================================
+# PostgreSQL (Bitnami)
+# =============================================================================
+postgresql:
+  # -- Enable PostgreSQL dependency
+  enabled: true
+  
+  auth:
+    # -- Enable custom authentication
+    enablePostgresUser: true
+    # -- Postgres admin password
+    postgresPassword: ""
+    # -- Database username
+    username: "trading_bot"
+    # -- Database password
+    password: ""
+    # -- Database name
+    database: "trading_bot"
+    # -- Existing secret for passwords
+    existingSecret: ""
+  
+  # -- Primary PostgreSQL configuration
+  primary:
+    # -- Persistence configuration
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 50Gi
+    
+    # -- Resource configuration
+    resources:
+      limits:
+        cpu: "2"
+        memory: 4Gi
+      requests:
+        cpu: "500m"
+        memory: 1Gi
+    
+    # -- PostgreSQL configuration
+    configuration: |
+      shared_buffers = 1GB
+      effective_cache_size = 3GB
+      maintenance_work_mem = 256MB
+      work_mem = 16MB
+      max_connections = 200
+      wal_buffers = 16MB
+      checkpoint_completion_target = 0.9
+      random_page_cost = 1.1
+      log_statement = mod
+      log_min_duration_statement = 1000
+    
+    # -- Init containers for pgvector
+    initContainers:
+      - name: init-pgvector
+        image: pgvector/pgvector:pg15
+        command:
+          - /bin/sh
+          - -c
+          - |
+            echo "pgvector extension will be created by init scripts"
+        volumeMounts: []
+  
+  # -- Metrics configuration
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+
+# =============================================================================
+# Redis (Bitnami)
+# =============================================================================
+redis:
+  # -- Enable Redis dependency
+  enabled: true
+  
+  # -- Redis architecture (standalone or replication)
+  architecture: standalone
+  
+  auth:
+    # -- Enable password authentication
+    enabled: true
+    # -- Redis password
+    password: ""
+    # -- Existing secret for password
+    existingSecret: ""
+  
+  master:
+    # -- Persistence configuration
+    persistence:
+      enabled: true
+      storageClass: ""
+      size: 10Gi
+    
+    # -- Resource configuration
+    resources:
+      limits:
+        cpu: "1"
+        memory: 2Gi
+      requests:
+        cpu: 250m
+        memory: 512Mi
+    
+    # -- Redis configuration
+    configuration: |
+      appendonly yes
+      maxmemory 1500mb
+      maxmemory-policy allkeys-lru
+      save 900 1
+      save 300 10
+      save 60 10000
+      tcp-backlog 511
+      timeout 0
+      tcp-keepalive 300
+  
+  # -- Metrics configuration
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false
+
+# =============================================================================
+# Testing/CI Values
+# =============================================================================
+test:
+  # -- Enable test resources
+  enabled: false
+  
+  # -- Test image
+  image:
+    repository: busybox
+    tag: "1.36"

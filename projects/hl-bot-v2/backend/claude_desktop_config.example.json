@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "hyperliquid-trading": {
+      "command": "python",
+      "args": [
+        "-m",
+        "hl_bot.trading.mcp_server"
+      ],
+      "cwd": "/path/to/hl-bot-v2/backend",
+      "env": {
+        "PYTHONPATH": "/path/to/hl-bot-v2/backend/src",
+        "HYPERLIQUID_API_KEY": "your_api_key_here",
+        "HYPERLIQUID_API_SECRET": "your_api_secret_here",
+        "HYPERLIQUID_BASE_URL": "https://api.hyperliquid.xyz"
+      }
+    }
+  }
+}

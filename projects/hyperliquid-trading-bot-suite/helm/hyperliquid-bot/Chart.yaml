@@ -1,0 +1,38 @@
+apiVersion: v2
+name: hyperliquid-bot
+description: A production-ready Helm chart for Hyperliquid Trading Bot Suite - AI-powered cryptocurrency trading platform
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+kubeVersion: ">=1.23.0-0"
+
+home: https://github.com/your-org/hyperliquid-trading-bot-suite
+sources:
+  - https://github.com/your-org/hyperliquid-trading-bot-suite
+
+maintainers:
+  - name: Trading Bot Team
+    email: team@example.com
+
+keywords:
+  - trading
+  - cryptocurrency
+  - hyperliquid
+  - ai
+  - bot
+
+annotations:
+  category: Finance
+  licenses: MIT
+
+dependencies:
+  - name: postgresql
+    version: "14.3.3"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+    alias: postgresql
+  - name: redis
+    version: "18.16.1"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+    alias: redis
