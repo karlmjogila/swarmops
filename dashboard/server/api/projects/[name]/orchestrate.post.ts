@@ -4,6 +4,7 @@ import { join } from 'path'
 import { randomUUID } from 'crypto'
 import { parseTaskGraph, getReadyTasks, type GraphTask } from '../../../utils/orchestrator'
 import { buildSkillBlock } from '../../../utils/skill-loader'
+import { getRoleConfig } from '../../../utils/role-loader'
 import { wakeAgent } from '../../../utils/agent'
 import { broadcastProjectUpdate } from '../../../plugins/websocket'
 import { createWorktree, getWorkerBranch, cleanupRunWorktrees } from '../../../utils/worktree-manager'
@@ -122,7 +123,8 @@ async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const workDir = worktreePath || dashboardPath
   
   if (task.role === 'reviewer') {
-    // Load matching skills for reviewer (e.g., security-hardening for security-reviewer)
+    // Load role instructions + matching skills
+    const roleConfig = await getRoleConfig('reviewer')
     const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
 
     return `[SWARMOPS REVIEWER] Project: ${projectName}
@@ -130,12 +132,13 @@ Task: ${task.title}
 Task ID: ${task.id}
 Run ID: ${runId} | Phase: ${phaseNumber}
 
-You are a senior code reviewer. Your job is to CATCH BUGS before they ship.
-
 **Working Directory:** ${workDir}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
+
+## Your Role
+${roleConfig.instructions || 'You are a senior code reviewer. Your job is to CATCH BUGS before they ship.'}
 ${skillBlock}
 ## Review Checklist (MUST follow)
 
@@ -203,21 +206,24 @@ The server will mark the review task as done automatically.`
   }
   
   if (task.role === 'fixer') {
-    // Load matching skills for fixer (same domain expertise as the code being fixed)
+    // Load builder role instructions (fixer is a builder fixing issues) + matching skills
+    const roleConfig = await getRoleConfig('builder')
     const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
 
-    // Fixer role - addresses issues found by reviewer
   return `[SWARMOPS FIXER] Project: ${projectName}
 Task: Fix issues from code review
 Task ID: ${task.id}
 Run ID: ${runId} | Phase: ${phaseNumber}
 
-You are a fixer agent addressing issues found during code review.
-
 **Working Directory:** ${workDir}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
+
+## Your Role
+You are a fixer agent addressing issues found during code review. Follow the builder standards below.
+
+${roleConfig.instructions || ''}
 ${skillBlock}
 ## Issues to Fix
 
@@ -253,7 +259,8 @@ After fixing, the code will be re-reviewed. Make sure your fixes are correct.`
 4. Call the task-complete endpoint (this will mark the task done in progress.md):`
     : `3. Call the task-complete endpoint when done (this will mark the task done in progress.md):`
 
-  // Load matching skills dynamically based on task content
+  // Load role instructions + matching skills dynamically based on task content
+  const roleConfig = await getRoleConfig(task.role || 'builder')
   const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
 
   return `[SWARMOPS BUILDER] Project: ${projectName}
@@ -261,12 +268,13 @@ Task: ${task.title}
 Task ID: ${task.id}
 Run ID: ${runId} | Phase: ${phaseNumber}
 
-You are a builder working on this specific task.
-
 **Working Directory:** ${workDir}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree. Make your changes and commit them before completing.` : ''}
+
+## Your Role
+${roleConfig.instructions || 'You are a builder working on this specific task.'}
 ${skillBlock}
 **Your Task:**
 1. Implement: ${task.title}
