@@ -415,7 +415,7 @@ export async function triggerOrchestrator(
     let workerBranch: string | undefined
     
     const worktreeResult = await createWorktree({
-      repoDir: dashboardPath, // Use dashboard as the repo for worktree
+      repoDir: projectPath, // Use project as the repo for worktree
       runId,
       workerId: task.id,
       baseBranch: 'main',
@@ -427,7 +427,7 @@ export async function triggerOrchestrator(
       console.log(`[worktree] Created worktree for task ${task.id}: ${worktreePath} (branch: ${workerBranch})`)
     } else {
       console.warn(`[worktree] Failed to create worktree for task ${task.id}: ${worktreeResult.error}`)
-      console.warn(`[worktree] Worker will work directly in ${dashboardPath}`)
+      console.warn(`[worktree] Worker will work directly in ${projectPath}`)
     }
     
     const prompt = await buildWorkerPrompt({
@@ -517,7 +517,7 @@ interface WorkerPromptOpts {
 
 async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const { task, projectName, projectPath, dashboardPath, worktreePath, workerBranch } = opts
-  const workDir = worktreePath || dashboardPath
+  const workDir = worktreePath || projectPath
   
   if (task.role === 'reviewer' || task.role === 'security-reviewer') {
     // Load role instructions + matching skills
