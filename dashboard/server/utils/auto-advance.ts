@@ -520,19 +520,21 @@ async function buildWorkerPrompt(opts: WorkerPromptOpts): Promise<string> {
   const workDir = worktreePath || dashboardPath
   
   if (task.role === 'reviewer' || task.role === 'security-reviewer') {
-    // Load matching skills for reviewer (e.g., security-hardening for security-reviewer)
+    // Load role instructions + matching skills
+    const roleConfig = await getRoleConfig(task.role)
     const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
 
     return `[SWARMOPS REVIEWER] Project: ${projectName}
 Task: ${task.title}
 Task ID: ${task.id}
 
-You are a senior code reviewer.
-
 **Working Directory:** ${workDir}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree.` : ''}
+
+## Your Role
+${roleConfig.instructions || 'You are a senior code reviewer.'}
 ${skillBlock}
 Review the code, check for bugs, then post results:
 
@@ -552,9 +554,10 @@ Then mark the review task done in progress.md.`
     : `2. When done, update progress.md - change [ ] to [x] for your task
 3. Call the task-complete endpoint to continue the build:`
   
-  // Load matching skills dynamically based on task content
+  // Load role instructions + matching skills dynamically based on task content
+  const roleConfig = await getRoleConfig(task.role || 'builder')
   const skillBlock = await buildSkillBlock(task.title, task.id, projectName)
-  
+
   return `[SWARMOPS BUILDER] Project: ${projectName}
 Task: ${task.title}
 Task ID: ${task.id}
@@ -563,6 +566,9 @@ Task ID: ${task.id}
 **Project Path:** ${projectPath}
 **Dashboard Path:** ${dashboardPath}
 ${workerBranch ? `**Branch:** ${workerBranch}\n\nYou are working in an isolated git worktree. Make your changes and commit them before completing.` : ''}
+
+## Your Role
+${roleConfig.instructions || 'You are a builder working on this specific task.'}
 ${skillBlock}
 ## Instructions
 1. Implement: ${task.title}
