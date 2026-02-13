@@ -75,7 +75,8 @@ hl-bot-v8/
 ├── packages/
 │   ├── shared/             # Shared TypeScript types
 │   ├── pattern-engine/     # Rust/WASM pattern detection
-│   └── hyperliquid-sdk/    # Hyperliquid SDK wrapper
+│   ├── hyperliquid-sdk/    # Hyperliquid SDK wrapper
+│   └── mcp-server/         # Claude Desktop MCP integration
 ├── infrastructure/
 │   └── docker/             # Docker Compose setup
 ├── docs/                   # Documentation
