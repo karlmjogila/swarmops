@@ -1,0 +1,52 @@
+{
+  "name": "@hl-bot/api",
+  "version": "0.1.0",
+  "description": "HL-Bot v8 API Server",
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "typecheck": "tsc --noEmit",
+    "db:migrate": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway migrate",
+    "db:info": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway info",
+    "db:validate": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway validate",
+    "db:repair": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway repair",
+    "db:clean": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway clean",
+    "db:baseline": "docker compose -f ../../infrastructure/docker/docker-compose.yml run --rm flyway baseline",
+    "test": "vitest",
+    "test:watch": "vitest --watch"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.74.0",
+    "@aws-sdk/client-s3": "^3.989.0",
+    "@aws-sdk/s3-request-presigner": "^3.989.0",
+    "@fastify/compress": "^7.0.0",
+    "@fastify/cors": "^8.5.0",
+    "@fastify/multipart": "^9.4.0",
+    "@fastify/websocket": "^8.3.1",
+    "@hl-bot/hyperliquid-sdk": "workspace:*",
+    "@hl-bot/shared": "workspace:*",
+    "bullmq": "^5.69.1",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.25.2",
+    "ioredis": "^5.9.3",
+    "mime-types": "^3.0.2",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
+    "pg": "^8.11.3",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^5.0.0",
+    "@types/mime-types": "^3.0.1",
+    "@types/node": "^20.10.6",
+    "@types/pg": "^8.10.9",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.1.3",
+    "ws": "^8.19.0"
+  }
+}
